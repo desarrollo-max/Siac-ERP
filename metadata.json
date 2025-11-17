@@ -1,0 +1,5 @@
+{
+  "name": "Prototipo ERP SIAC",
+  "description": "Un prototipo funcional de un ERP modular y multi-empresa (SIAC) para validar la arquitectura de datos con Supabase, RLS y JSONB, implementado en Angular.",
+  "requestFramePermissions": []
+}
