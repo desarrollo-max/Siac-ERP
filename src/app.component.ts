@@ -1,9 +1,10 @@
-import { Component, OnInit, ChangeDetectionStrategy, signal, effect, computed, ChangeDetectorRef, inject } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy, signal, effect, computed, ChangeDetectorRef, inject, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-// FIX: Removed FormBuilder as it was causing type errors. Forms are now created directly with FormGroup and FormControl.
 import { ReactiveFormsModule, FormGroup, Validators, FormControl } from '@angular/forms';
 import { SupabaseService } from './services/supabase.service';
-import { Empresa, Sucursal, ArticuloInventario, ConfiguracionCatalogo, CampoDefinicion, Modulo, UsuarioParaAdmin } from './models/siac.models';
+import { Empresa, Sucursal, Modulo, UsuarioParaAdmin } from './models/siac.models';
+
+declare var google: any;
 
 type AppView = 'launcher' | 'business_dashboard' | 'user_management';
 
@@ -15,7 +16,6 @@ type AppView = 'launcher' | 'business_dashboard' | 'user_management';
 })
 export class AppComponent implements OnInit {
   private supabase = inject(SupabaseService);
-  // FIX: Removed FormBuilder injection.
   private cdr = inject(ChangeDetectorRef);
 
   logoSrc = 'https://bupapjirkilnfoswgtsg.supabase.co/storage/v1/object/public/assets/logo.png';
@@ -31,8 +31,6 @@ export class AppComponent implements OnInit {
   
   activeCompanyId = signal<string | null>(null);
   sucursales = signal<Sucursal[]>([]);
-  articulos = signal<ArticuloInventario[]>([]);
-  configuracionCatalogo = signal<ConfiguracionCatalogo | null>(null);
   
   // --- UI State Signals ---
   isLoading = signal<boolean>(true);
@@ -43,13 +41,7 @@ export class AppComponent implements OnInit {
   
   // --- Forms ---
   sucursalForm: FormGroup;
-  articuloForm: FormGroup;
   empresaForm: FormGroup;
-
-  // --- File Upload State ---
-  fileToUpload = signal<File | null>(null);
-  uploadStatus = signal<string>('');
-  isUploading = signal<boolean>(false);
 
   // --- ACL Editing State ---
   editingUser = signal<UsuarioParaAdmin | null>(null);
@@ -58,23 +50,31 @@ export class AppComponent implements OnInit {
   // --- Business Creation State ---
   isCreatingBusiness = signal<boolean>(false);
 
+  // --- Google Maps State ---
+  @ViewChild('addressInput') addressInput: ElementRef<HTMLInputElement>;
+  @ViewChild('mapContainer') mapContainer: ElementRef<HTMLDivElement>;
+  private map: any;
+  private marker: any;
+  private geocoder: any;
+  mapsApiStatus = signal<'loading' | 'ready' | 'error'>('loading');
+
+
   constructor() {
-    // FIX: Replaced FormBuilder.group with new FormGroup and new FormControl to fix TS errors on lines 61, 66, 70, and 73.
     this.sucursalForm = new FormGroup({
       nombre: new FormControl('', Validators.required),
-      tipo: new FormControl('POS', Validators.required),
-    });
-
-    this.articuloForm = new FormGroup({
-      nombre: new FormControl('', Validators.required),
-      sku: new FormControl('', Validators.required),
-      stock: new FormControl(0, [Validators.required, Validators.min(0)]),
-      dynamicForm: new FormGroup({}),
+      direccion: new FormControl('', Validators.required),
+      latitud: new FormControl(0, Validators.required),
+      longitud: new FormControl(0, Validators.required),
     });
     
     this.empresaForm = new FormGroup({
       nombre: new FormControl('', Validators.required),
     });
+
+    // Handle Google Maps API authentication errors
+    (window as any).gm_authFailure = () => {
+      this.mapsApiStatus.set('error');
+    };
 
     effect(() => {
       const companyId = this.activeCompanyId();
@@ -84,8 +84,11 @@ export class AppComponent implements OnInit {
     });
 
     effect(() => {
-        const config = this.configuracionCatalogo();
-        this.buildDynamicForm(config?.fields_definition || []);
+      if (this.activeView() === 'business_dashboard') {
+        this.mapsApiStatus.set('loading');
+        // Defer map initialization until the view is rendered
+        setTimeout(() => this.setupGoogleMaps(), 100);
+      }
     });
   }
 
@@ -112,28 +115,11 @@ export class AppComponent implements OnInit {
   private loadCompanyData(companyId: string): void {
     this.isLoading.set(true);
     this.sucursales.set([]);
-    this.articulos.set([]);
-    this.configuracionCatalogo.set(null);
 
-    this.supabase.getSucursales(companyId).subscribe(data => this.sucursales.set(data));
-    this.supabase.getArticulos(companyId).subscribe(data => this.articulos.set(data));
-    this.supabase.getConfiguracionCatalogo(companyId).subscribe(data => {
-        this.configuracionCatalogo.set(data);
-        this.isLoading.set(false);
+    this.supabase.getSucursales(companyId).subscribe(data => {
+      this.sucursales.set(data)
+      this.isLoading.set(false);
     });
-  }
-
-  private buildDynamicForm(fields: CampoDefinicion[]): void {
-    const dynamicFormGroup = this.articuloForm.get('dynamicForm') as FormGroup;
-    Object.keys(dynamicFormGroup.controls).forEach(key => {
-      dynamicFormGroup.removeControl(key);
-    });
-    fields.forEach(field => {
-      const validators = field.required ? [Validators.required] : [];
-      const control = new FormControl(field.type === 'boolean' ? false : '', validators);
-      dynamicFormGroup.addControl(field.key, control);
-    });
-    this.cdr.markForCheck();
   }
 
   getModulesForCompany(companyId: string): Modulo[] {
@@ -167,63 +153,8 @@ export class AppComponent implements OnInit {
     
     this.supabase.addSucursal(nuevaSucursal).subscribe(sucursal => {
       this.sucursales.update(list => [...list, sucursal]);
-      this.sucursalForm.reset({ tipo: 'POS' });
+      this.sucursalForm.reset({ nombre: '', direccion: '', latitud: 0, longitud: 0 });
       this.isSubmitting.set(false);
-    });
-  }
-
-  agregarArticulo(): void {
-    if (this.articuloForm.invalid || !this.activeCompanyId()) return;
-    
-    this.isSubmitting.set(true);
-    const { dynamicForm, ...staticFields } = this.articuloForm.value;
-    const nuevoArticulo = {
-        ...staticFields,
-        custom_fields: dynamicForm,
-        company_id: this.activeCompanyId()!,
-    };
-
-    this.supabase.addArticulo(nuevoArticulo).subscribe(articulo => {
-        this.articulos.update(list => [...list, articulo]);
-        this.articuloForm.reset({ stock: 0 });
-        this.isSubmitting.set(false);
-    });
-  }
-  
-  // --- File Upload Logic ---
-  onFileSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (input.files && input.files.length > 0) {
-      this.fileToUpload.set(input.files[0]);
-      this.uploadStatus.set('');
-    }
-  }
-
-  iniciarProcesoImportacion(): void {
-    const file = this.fileToUpload();
-    const companyId = this.activeCompanyId();
-    const config = this.configuracionCatalogo();
-
-    if (!file || !companyId || !config) {
-      this.uploadStatus.set('Error: Falta archivo, empresa o configuración.');
-      return;
-    }
-
-    this.isUploading.set(true);
-    this.uploadStatus.set(`Procesando ${file.name}...`);
-
-    this.supabase.uploadFileAndTriggerFunction(file, companyId, config).subscribe({
-      next: (response) => {
-        this.uploadStatus.set(response.message);
-        this.isUploading.set(false);
-        this.fileToUpload.set(null);
-        const fileInput = document.getElementById('file-upload') as HTMLInputElement;
-        if(fileInput) fileInput.value = '';
-      },
-      error: (err) => {
-        this.uploadStatus.set('Error en el procesamiento.');
-        this.isUploading.set(false);
-      }
     });
   }
   
@@ -246,7 +177,7 @@ export class AppComponent implements OnInit {
     const isChecked = (event.target as HTMLInputElement).checked;
     this.editedUserAccess.update(map => {
       map.set(companyId, isChecked);
-      return new Map(map); // Create new map instance to trigger signal change
+      return new Map(map);
     });
   }
 
@@ -289,6 +220,90 @@ export class AppComponent implements OnInit {
       this.supabase.getModulos().subscribe(modulos => this.modulos.set(modulos));
       this.isSubmitting.set(false);
       this.closeCreateBusinessModal();
+    });
+  }
+
+  // --- Google Maps Integration ---
+  private setupGoogleMaps(): void {
+    if (this.mapsApiStatus() === 'error') {
+      return;
+    }
+
+    if (typeof google === 'undefined' || typeof google.maps === 'undefined' || !this.addressInput || !this.mapContainer) {
+      setTimeout(() => this.setupGoogleMaps(), 200);
+      return;
+    }
+    
+    try {
+        this.initMap();
+        this.initAutocomplete();
+        this.geocoder = new google.maps.Geocoder();
+        this.mapsApiStatus.set('ready');
+    } catch (e) {
+        console.error("Error initializing Google Maps:", e);
+        this.mapsApiStatus.set('error');
+    }
+  }
+
+  private initMap(): void {
+    const initialCoords = { lat: 19.4326, lng: -99.1332 }; // Mexico City
+    this.map = new google.maps.Map(this.mapContainer.nativeElement, {
+      center: initialCoords,
+      zoom: 12,
+      mapTypeControl: false,
+      streetViewControl: false,
+    });
+
+    this.marker = new google.maps.Marker({
+      position: initialCoords,
+      map: this.map,
+      draggable: true,
+    });
+
+    this.marker.addListener('dragend', (event: any) => {
+      const newPosition = { lat: event.latLng.lat(), lng: event.latLng.lng() };
+      this.updateFormFromMarker(newPosition);
+    });
+  }
+
+  private initAutocomplete(): void {
+    const autocomplete = new google.maps.places.Autocomplete(this.addressInput.nativeElement, {
+      types: ['address'],
+    });
+
+    autocomplete.addListener('place_changed', () => {
+      const place = autocomplete.getPlace();
+      if (place.geometry && place.geometry.location) {
+        const newPosition = {
+          lat: place.geometry.location.lat(),
+          lng: place.geometry.location.lng(),
+        };
+        this.updateMapAndForm(place.formatted_address, newPosition);
+      }
+    });
+  }
+
+  private updateMapAndForm(address: string | undefined, position: { lat: number, lng: number }): void {
+    if (address) {
+      this.sucursalForm.patchValue({ direccion: address });
+    }
+    this.sucursalForm.patchValue({
+      latitud: position.lat,
+      longitud: position.lng,
+    });
+
+    this.map.setCenter(position);
+    this.marker.setPosition(position);
+    this.cdr.detectChanges();
+  }
+
+  private updateFormFromMarker(position: { lat: number, lng: number }): void {
+    this.geocoder.geocode({ location: position }, (results: any[], status: string) => {
+      let address = 'Dirección no encontrada';
+      if (status === 'OK' && results[0]) {
+        address = results[0].formatted_address;
+      }
+      this.updateMapAndForm(address, position);
     });
   }
 }

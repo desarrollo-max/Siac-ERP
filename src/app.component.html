@@ -84,151 +84,78 @@
 
           <main class="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto bg-slate-50 dark:bg-slate-950">
             @if (activeCompany(); as company) {
-              <div class="max-w-7xl mx-auto">
+              <div class="max-w-4xl mx-auto">
                 <header class="mb-8">
                   <h1 class="text-3xl font-bold text-slate-800 dark:text-white">Panel de {{ company.nombre }}</h1>
                   <p class="text-slate-500 dark:text-slate-400 mt-1">Gestión de recursos y validación de arquitectura RLS.</p>
                 </header>
 
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                  <div class="lg:col-span-2 space-y-8">
-                    <section class="bg-white dark:bg-slate-800/50 p-6 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700">
-                      <h2 class="text-xl font-semibold mb-4 border-b border-slate-200 dark:border-slate-700 pb-3 text-slate-800 dark:text-slate-100">Módulo de Ubicaciones Físicas</h2>
-                       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                        @for (sucursal of sucursales(); track sucursal.id) {
-                          <div class="bg-slate-100 dark:bg-slate-700/50 p-4 rounded-lg border border-slate-200 dark:border-slate-600">
-                            <p class="font-bold text-slate-800 dark:text-slate-200">{{ sucursal.nombre }}</p>
-                            <span class="text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/50 px-2 py-1 rounded-full">{{ sucursal.tipo }}</span>
-                          </div>
-                        }
-                        @if (sucursales().length === 0) {
-                          <p class="text-slate-500 dark:text-slate-400 col-span-2 text-center py-4">No hay ubicaciones para este negocio.</p>
-                        }
-                      </div>
-                      <form [formGroup]="sucursalForm" (ngSubmit)="agregarSucursal()" class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
-                        <div class="sm:col-span-2 grid grid-cols-2 gap-4">
-                          <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Nombre</label>
-                            <input formControlName="nombre" placeholder="Nueva Ubicación" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 dark:placeholder:text-slate-400">
-                          </div>
-                          <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Tipo</label>
-                            <select formControlName="tipo" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700">
-                              <option>POS</option>
-                              <option>Warehouse</option>
-                              <option>Office</option>
-                            </select>
-                          </div>
-                        </div>
-                        <button type="submit" [disabled]="sucursalForm.invalid || isSubmitting()" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 dark:disabled:bg-blue-800 disabled:cursor-not-allowed">
-                          {{ isSubmitting() ? 'Agregando...' : 'Agregar Ubicación' }}
-                        </button>
-                      </form>
-                    </section>
+                <div class="space-y-8">
+                  <section class="bg-white dark:bg-slate-800/50 p-6 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700">
+                    <h2 class="text-xl font-semibold mb-4 border-b border-slate-200 dark:border-slate-700 pb-3 text-slate-800 dark:text-slate-100">Módulo de Ubicaciones Físicas</h2>
                     
-                    <section class="bg-white dark:bg-slate-800/50 p-6 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700">
-                      <h2 class="text-xl font-semibold mb-4 border-b border-slate-200 dark:border-slate-700 pb-3 text-slate-800 dark:text-slate-100">Módulo de Control de Existencias</h2>
-                      <div class="rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
-                        <div class="overflow-x-auto">
-                          <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-                            <thead class="bg-slate-50 dark:bg-slate-700/50">
-                              <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Artículo</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">SKU</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Stock</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Campos Dinámicos</th>
-                              </tr>
-                            </thead>
-                             <tbody class="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
-                              @for (item of articulos(); track item.id) {
-                                <tr>
-                                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-white">{{ item.nombre }}</td>
-                                  <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400 font-mono">{{ item.sku }}</td>
-                                  <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">{{ item.stock }}</td>
-                                  <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400 font-mono text-xs">
-                                    {{ item.custom_fields | json }}
-                                  </td>
-                                </tr>
-                              }
-                              @if (articulos().length === 0) {
-                                <tr><td colspan="4" class="px-6 py-8 text-center text-slate-500 dark:text-slate-400">No hay artículos para este negocio.</td></tr>
-                              }
-                            </tbody>
-                          </table>
+                    @switch (mapsApiStatus()) {
+                      @case ('loading') {
+                        <div class="flex items-center justify-center p-8 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
+                          <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mr-3"></div>
+                          <span>Cargando mapa...</span>
                         </div>
-                      </div>
-                    </section>
-
-                     <section class="bg-white dark:bg-slate-800/50 p-6 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700">
-                      <h2 class="text-xl font-semibold mb-4 border-b border-slate-200 dark:border-slate-700 pb-3 text-slate-800 dark:text-slate-100">Importación Masiva (Simulación)</h2>
-                      @if (configuracionCatalogo()) {
-                        <div class="space-y-4">
-                          <p class="text-sm text-slate-600 dark:text-slate-400">Suba un archivo. La Edge Function (simulada) validará cada fila contra el esquema dinámico de este negocio.</p>
-                          <div class="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-4">
-                            <input id="file-upload" type="file" (change)="onFileSelected($event)" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/50 dark:file:text-blue-300 dark:hover:file:bg-blue-900"/>
-                            <button (click)="iniciarProcesoImportacion()" [disabled]="!fileToUpload() || isUploading()" class="w-full sm:w-auto flex-shrink-0 py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 disabled:bg-green-400 dark:disabled:bg-green-800 disabled:cursor-not-allowed">
-                              {{ isUploading() ? 'Procesando...' : 'Importar' }}
-                            </button>
-                          </div>
-                          @if (uploadStatus()) {
-                            <p class="text-sm p-3 rounded-lg mt-4" [class]="uploadStatus().startsWith('Error') ? 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200' : 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200'">{{ uploadStatus() }}</p>
+                      }
+                      @case ('error') {
+                        <div class="p-4 rounded-lg bg-red-100 dark:bg-red-900/50 border border-red-300 dark:border-red-700">
+                          <h3 class="font-bold text-red-800 dark:text-red-200">Error al Cargar Google Maps</h3>
+                          <p class="text-sm text-red-700 dark:text-red-300 mt-1">
+                            No se pudo autenticar con la API de Google Maps. Por favor, verifique que ha configurado una clave de API válida en el archivo <code>index.html</code>.
+                            La clave de API debe tener habilitadas las APIs "Maps JavaScript API" y "Places API".
+                          </p>
+                        </div>
+                      }
+                      @case ('ready') {
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                          @for (sucursal of sucursales(); track sucursal.id) {
+                            <div class="bg-slate-100 dark:bg-slate-700/50 p-4 rounded-lg border border-slate-200 dark:border-slate-600">
+                              <p class="font-bold text-slate-800 dark:text-slate-200">{{ sucursal.nombre }}</p>
+                              <p class="text-sm text-slate-600 dark:text-slate-400">{{ sucursal.direccion }}</p>
+                              <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 font-mono">Lat: {{ sucursal.latitud }}, Lon: {{ sucursal.longitud }}</p>
+                            </div>
+                          }
+                          @if (sucursales().length === 0) {
+                            <p class="text-slate-500 dark:text-slate-400 col-span-2 text-center py-4">No hay ubicaciones para este negocio.</p>
                           }
                         </div>
-                      } @else {
-                        <p class="text-slate-500 dark:text-slate-400">Importación deshabilitada. Se requiere una configuración de catálogo para este negocio.</p>
-                      }
-                    </section>
-                  </div>
-                  <aside class="space-y-8">
-                     <section class="bg-white dark:bg-slate-800/50 p-6 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700">
-                      <h2 class="text-xl font-semibold mb-4 border-b border-slate-200 dark:border-slate-700 pb-3 text-slate-800 dark:text-slate-100">Agregar Artículo</h2>
-                      @if (configuracionCatalogo(); as config) {
-                        <form [formGroup]="articuloForm" (ngSubmit)="agregarArticulo()" class="space-y-5">
+                        <form [formGroup]="sucursalForm" (ngSubmit)="agregarSucursal()" class="space-y-4 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700/50">
                           <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Nombre del Artículo</label>
-                            <input formControlName="nombre" placeholder="Bota Vaquera" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm bg-white dark:bg-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <label for="address-input" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Dirección (busque o seleccione en el mapa)</label>
+                            <input #addressInput id="address-input" formControlName="direccion" placeholder="Comience a escribir una dirección..." class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 dark:placeholder:text-slate-400">
                           </div>
-                          <div class="grid grid-cols-2 gap-4">
-                            <div>
-                              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">SKU</label>
-                              <input formControlName="sku" placeholder="BB-BTV-002" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm bg-white dark:bg-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            </div>
-                            <div>
-                              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Stock Inicial</label>
-                              <input formControlName="stock" type="number" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm bg-white dark:bg-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            </div>
-                          </div>
-                          <div formGroupName="dynamicForm" class="space-y-5 pt-5 border-t border-slate-200 dark:border-slate-700">
-                            <h3 class="text-lg font-medium text-slate-900 dark:text-slate-200">{{ config.nombre_catalogo }}</h3>
-                            @for (field of config.fields_definition; track field.key) {
+                          
+                          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div #mapContainer class="w-full h-64 md:h-full rounded-lg bg-slate-200 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 min-h-[200px]"></div>
+                            <div class="space-y-4">
                               <div>
-                                <label [for]="field.key" class="block text-sm font-medium text-slate-700 dark:text-slate-300">{{ field.label }} {{ field.required ? '*' : '' }}</label>
-                                @switch (field.type) {
-                                  @case ('text') { <input [id]="field.key" [formControlName]="field.key" type="text" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm bg-white dark:bg-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"> }
-                                  @case ('number') { <input [id]="field.key" [formControlName]="field.key" type="number" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm bg-white dark:bg-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"> }
-                                  @case ('boolean') {
-                                    <div class="mt-2">
-                                      <label class="inline-flex items-center cursor-pointer">
-                                        <input type="checkbox" [id]="field.key" [formControlName]="field.key" class="sr-only peer">
-                                        <div class="relative w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-slate-600 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-blue-600"></div>
-                                      </label>
-                                    </div>
-                                  }
-                                }
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Nombre de Ubicación</label>
+                                <input formControlName="nombre" placeholder="Ej: Bodega Central" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 dark:placeholder:text-slate-400">
                               </div>
-                            }
+                              <div>
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Latitud</label>
+                                <input type="number" formControlName="latitud" readonly class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 cursor-not-allowed">
+                              </div>
+                              <div>
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Longitud</label>
+                                <input type="number" formControlName="longitud" readonly class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 cursor-not-allowed">
+                              </div>
+                            </div>
                           </div>
-                          <button type="submit" [disabled]="!articuloForm.valid || isSubmitting()" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 dark:disabled:bg-blue-800 disabled:cursor-not-allowed">
-                            {{ isSubmitting() ? 'Guardando...' : 'Guardar Artículo' }}
-                          </button>
+    
+                          <div class="flex justify-end pt-2">
+                            <button type="submit" [disabled]="sucursalForm.invalid || isSubmitting()" class="inline-flex justify-center py-2 px-6 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 dark:disabled:bg-blue-800 disabled:cursor-not-allowed">
+                              {{ isSubmitting() ? 'Agregando...' : 'Agregar Ubicación' }}
+                            </button>
+                          </div>
                         </form>
-                      } @else {
-                        <div class="text-center p-6 border-2 border-dashed rounded-lg border-slate-300 dark:border-slate-600">
-                          <p class="text-slate-500 dark:text-slate-400">No hay configuración de catálogo para "{{ company.nombre }}".</p>
-                        </div>
                       }
-                    </section>
-                  </aside>
+                    }
+                  </section>
                 </div>
               </div>
             }

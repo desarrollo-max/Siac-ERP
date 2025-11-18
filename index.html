@@ -6,6 +6,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- 
+    IMPORTANTE: Reemplace 'YOUR_GOOGLE_MAPS_API_KEY' con su clave de API real de Google Maps.
+    Debe habilitar "Maps JavaScript API" y "Places API" en su proyecto de Google Cloud.
+    https://developers.google.com/maps/documentation/javascript/get-api-key
+  -->
+  <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=places" async defer></script>
   <style>
     /* Custom scrollbar for better aesthetics */
     ::-webkit-scrollbar {
@@ -20,6 +26,11 @@
     }
     ::-webkit-scrollbar-thumb:hover {
       background: #334155; /* slate-700 */
+    }
+    /* Evita que el autocompletado de Google Maps se vea afectado por los estilos oscuros */
+    .pac-container {
+      background-color: #fff;
+      color: #000;
     }
   </style>
 <script type="importmap">

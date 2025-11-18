@@ -1,6 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 import { Observable, of, delay, tap, map } from 'rxjs';
-import { Usuario, Empresa, EmpresaUsuario, Sucursal, ArticuloInventario, ConfiguracionCatalogo, CampoDefinicion, Modulo, UsuarioParaAdmin } from '../models/siac.models';
+import { Usuario, Empresa, EmpresaUsuario, Sucursal, Modulo, UsuarioParaAdmin } from '../models/siac.models';
 
 // SIMULACIÓN DE LA BASE DE DATOS SUPABASE
 const MOCK_USUARIOS: Usuario[] = [
@@ -12,10 +12,6 @@ let MOCK_EMPRESAS: Empresa[] = [];
 let MOCK_EMPRESA_USUARIOS: EmpresaUsuario[] = [];
 
 let MOCK_SUCURSALES: Sucursal[] = [];
-
-let MOCK_ARTICULOS: ArticuloInventario[] = [];
-
-const MOCK_CONFIG_CATALOGOS: ConfiguracionCatalogo[] = [];
 
 let MOCK_MODULOS: Modulo[] = [];
 
@@ -55,12 +51,6 @@ export class SupabaseService {
             case 'branches':
                 data = MOCK_SUCURSALES;
                 break;
-            case 'inventory_items':
-                data = MOCK_ARTICULOS;
-                break;
-            case 'catalog_configs':
-                data = MOCK_CONFIG_CATALOGOS;
-                break;
             case 'modules':
                 data = MOCK_MODULOS;
                 break;
@@ -99,9 +89,6 @@ export class SupabaseService {
         switch(table) {
             case 'branches':
                 MOCK_SUCURSALES.push(...newRecords);
-                break;
-            case 'inventory_items':
-                MOCK_ARTICULOS.push(...newRecords);
                 break;
         }
         return of({ data: newRecords, error: null }).pipe(delay(400));
@@ -154,25 +141,9 @@ export class SupabaseService {
     return this.from<Sucursal>('branches').select('*').eq('company_id', companyId).pipe(map(response => response.data));
   }
   
-  getArticulos(companyId: string): Observable<ArticuloInventario[]> {
-    return this.from<ArticuloInventario>('inventory_items').select('*').eq('company_id', companyId).pipe(map(response => response.data));
-  }
-
-  getConfiguracionCatalogo(companyId: string): Observable<ConfiguracionCatalogo | null> {
-     return this.from<ConfiguracionCatalogo>('catalog_configs')
-       .select('*')
-       .eq('company_id', companyId)
-       .pipe(map(response => response.data?.[0] || null));
-  }
-  
   addSucursal(sucursal: Omit<Sucursal, 'id'>): Observable<Sucursal> {
     const nuevaSucursal = { ...sucursal, id: Date.now() };
     return this.from<Sucursal>('branches').insert(nuevaSucursal).pipe(map(res => res.data[0]));
-  }
-
-  addArticulo(articulo: Omit<ArticuloInventario, 'id'>): Observable<ArticuloInventario> {
-    const nuevoArticulo = { ...articulo, id: Date.now() };
-    return this.from<ArticuloInventario>('inventory_items').insert(nuevoArticulo).pipe(map(res => res.data[0]));
   }
 
   addEmpresa(empresa: Omit<Empresa, 'id' | 'root_admin_id'>): Observable<Empresa> {
@@ -197,15 +168,8 @@ export class SupabaseService {
     MOCK_EMPRESA_USUARIOS.push(newAssignment);
 
     // Simulate adding default modules for a new company
-    MOCK_MODULOS.push({ company_id: nuevoId, nombre: 'Control de Existencias' });
     MOCK_MODULOS.push({ company_id: nuevoId, nombre: 'Ubicaciones Físicas' });
 
     return of(nuevaEmpresa).pipe(delay(500));
-  }
-  
-  uploadFileAndTriggerFunction(file: File, companyId: string, config: ConfiguracionCatalogo): Observable<{ message: string }> {
-      console.log(`Simulando subida de ${file.name} para la empresa ${companyId}...`);
-      console.log('La Edge Function usaría esta configuración para validar:', config);
-      return of({ message: `Archivo ${file.name} procesado exitosamente.`}).pipe(delay(2500));
   }
 }
