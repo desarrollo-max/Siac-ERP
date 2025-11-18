@@ -9,19 +9,19 @@
       
       <!-- VISTA: LAUNCHER (Área de Negocios y Aplicaciones) -->
       @case ('launcher') {
-        <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+        <div class="container mx-auto py-8 md:py-12 px-4 sm:px-6 lg:px-8">
           <header class="text-center mb-12">
             <img [src]="logoSrc" alt="SIAC ERP Logo" class="h-20 w-auto mx-auto mb-4">
-            <h1 class="text-4xl font-extrabold text-slate-800 dark:text-white tracking-tight">Sistema Integral de Administración de la Compañía</h1>
-            <p class="mt-4 text-lg text-slate-500 dark:text-slate-400">Seleccione un negocio para administrar o utilice las herramientas de gestión global.</p>
+            <h1 class="text-3xl md:text-4xl font-extrabold text-slate-800 dark:text-white tracking-tight">Sistema Integral de Administración</h1>
+            <p class="mt-4 max-w-2xl mx-auto text-lg text-slate-500 dark:text-slate-400">Seleccione un negocio para administrar o utilice las herramientas de gestión global.</p>
           </header>
           
-          <div class="flex justify-center gap-4 mb-10">
-             <button (click)="navigateToUserManagement()" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-slate-700 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 dark:bg-slate-600 dark:hover:bg-slate-500">
+          <div class="flex flex-col sm:flex-row justify-center items-center gap-4 mb-12">
+             <button (click)="navigateToUserManagement()" class="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-lg shadow-sm text-white bg-slate-700 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 dark:bg-slate-600 dark:hover:bg-slate-500 transition-all transform hover:scale-105">
                 <svg class="w-5 h-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-4.685c2.175 1.255 3.273 3.48 3.273 5.908z" /></svg>
-                Administración de Jurisdicción y Acceso (ACL)
+                Gestión de Acceso (ACL)
               </button>
-              <button (click)="openCreateBusinessModal()" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+              <button (click)="openCreateBusinessModal()" class="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all transform hover:scale-105">
                 <svg class="w-5 h-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                 Crear Nuevo Negocio
               </button>
@@ -29,24 +29,28 @@
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
             @for(empresa of empresas(); track empresa.id) {
-              <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-1">
-                <div class="p-6">
+              <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 group">
+                <div class="p-6 md:p-8">
                   <h2 class="text-2xl font-bold text-slate-900 dark:text-white">{{ empresa.nombre }}</h2>
                   <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Grupo Empresarial</p>
                   
                   <div class="mt-6">
                     <h3 class="text-sm font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Módulos Instalados</h3>
-                    <div class="flex flex-wrap gap-2 mt-3">
-                      @for(modulo of getModulesForCompany(empresa.id); track modulo.nombre) {
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                          {{ modulo.nombre }}
-                        </span>
-                      }
-                    </div>
+                    @if(getModulesForCompany(empresa.id).length > 0) {
+                      <div class="flex flex-wrap gap-2 mt-3">
+                        @for(modulo of getModulesForCompany(empresa.id); track modulo.nombre) {
+                          <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200">
+                            {{ modulo.nombre }}
+                          </span>
+                        }
+                      </div>
+                    } @else {
+                      <p class="text-sm text-slate-400 dark:text-slate-500 mt-2 italic">Sin módulos instalados.</p>
+                    }
                   </div>
                 </div>
-                <div class="bg-slate-50 dark:bg-slate-800/50 px-6 py-4">
-                  <button (click)="navigateToBusiness(empresa.id)" class="w-full text-center font-semibold text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors">
+                <div class="bg-slate-50 dark:bg-slate-800/50 px-6 py-4 border-t border-slate-200 dark:border-slate-700/50">
+                  <button (click)="navigateToBusiness(empresa.id)" class="w-full text-center font-bold text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors group-hover:tracking-wider">
                     Administrar Negocio &rarr;
                   </button>
                 </div>
@@ -59,20 +63,26 @@
       <!-- VISTA: DASHBOARD DE NEGOCIO -->
       @case ('business_dashboard') {
         <div class="flex flex-col md:flex-row">
-          <aside class="bg-slate-900 text-slate-200 w-full md:w-64 p-4 md:p-6 flex-shrink-0">
-            <div class="flex items-center mb-8">
-              <img [src]="logoIconSrc" alt="SIAC ERP Logo" class="h-16 w-auto mx-auto">
+          <aside class="bg-white dark:bg-slate-800 w-full md:w-72 p-4 md:p-6 flex-shrink-0 border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-700">
+            <div class="flex items-center gap-4 mb-8">
+              <img [src]="logoIconSrc" alt="SIAC ERP Icono" class="h-12 w-auto">
+              <div>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Panel de Negocio</p>
+                @if (activeCompany(); as company) {
+                   <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100">{{ company.nombre }}</h2>
+                }
+              </div>
             </div>
             <nav>
-              <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Navegación</h2>
-              <button (click)="navigateToLauncher()" class="w-full text-left flex items-center p-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors duration-200">
+              <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 px-3">Navegación</h3>
+              <button (click)="navigateToLauncher()" class="w-full text-left flex items-center p-3 rounded-lg bg-slate-100 dark:bg-slate-700/50 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors duration-200">
                 <svg class="w-5 h-5 mr-3 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" /></svg>
-                <span class="font-medium">Volver al Launcher</span>
+                <span>Volver al Launcher</span>
               </button>
             </nav>
           </aside>
 
-          <main class="flex-1 p-4 md:p-8 overflow-y-auto bg-slate-50 dark:bg-slate-900">
+          <main class="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto bg-slate-50 dark:bg-slate-950">
             @if (activeCompany(); as company) {
               <div class="max-w-7xl mx-auto">
                 <header class="mb-8">
@@ -82,84 +92,86 @@
 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                   <div class="lg:col-span-2 space-y-8">
-                    <section class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-lg">
-                      <h2 class="text-xl font-semibold mb-4 border-b dark:border-slate-700 pb-3">Módulo de Ubicaciones Físicas</h2>
+                    <section class="bg-white dark:bg-slate-800/50 p-6 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700">
+                      <h2 class="text-xl font-semibold mb-4 border-b border-slate-200 dark:border-slate-700 pb-3 text-slate-800 dark:text-slate-100">Módulo de Ubicaciones Físicas</h2>
                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                         @for (sucursal of sucursales(); track sucursal.id) {
-                          <div class="bg-slate-100 dark:bg-slate-700 p-4 rounded-lg">
+                          <div class="bg-slate-100 dark:bg-slate-700/50 p-4 rounded-lg border border-slate-200 dark:border-slate-600">
                             <p class="font-bold text-slate-800 dark:text-slate-200">{{ sucursal.nombre }}</p>
-                            <span class="text-sm text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-slate-600 px-2 py-1 rounded-full">{{ sucursal.tipo }}</span>
+                            <span class="text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/50 px-2 py-1 rounded-full">{{ sucursal.tipo }}</span>
                           </div>
                         }
                         @if (sucursales().length === 0) {
-                          <p class="text-slate-500 dark:text-slate-400 col-span-2">No hay ubicaciones para este negocio.</p>
+                          <p class="text-slate-500 dark:text-slate-400 col-span-2 text-center py-4">No hay ubicaciones para este negocio.</p>
                         }
                       </div>
-                      <form [formGroup]="sucursalForm" (ngSubmit)="agregarSucursal()" class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+                      <form [formGroup]="sucursalForm" (ngSubmit)="agregarSucursal()" class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
                         <div class="sm:col-span-2 grid grid-cols-2 gap-4">
                           <div>
                             <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Nombre</label>
-                            <input formControlName="nombre" placeholder="Nueva Ubicación" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-white dark:bg-slate-700">
+                            <input formControlName="nombre" placeholder="Nueva Ubicación" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 dark:placeholder:text-slate-400">
                           </div>
                           <div>
                             <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Tipo</label>
-                            <select formControlName="tipo" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-white dark:bg-slate-700">
+                            <select formControlName="tipo" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700">
                               <option>POS</option>
                               <option>Warehouse</option>
                               <option>Office</option>
                             </select>
                           </div>
                         </div>
-                        <button type="submit" [disabled]="sucursalForm.invalid || isSubmitting()" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 dark:disabled:bg-blue-800">
+                        <button type="submit" [disabled]="sucursalForm.invalid || isSubmitting()" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 dark:disabled:bg-blue-800 disabled:cursor-not-allowed">
                           {{ isSubmitting() ? 'Agregando...' : 'Agregar Ubicación' }}
                         </button>
                       </form>
                     </section>
                     
-                    <section class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-lg">
-                      <h2 class="text-xl font-semibold mb-4 border-b dark:border-slate-700 pb-3">Módulo de Control de Existencias</h2>
-                      <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-                          <thead class="bg-slate-50 dark:bg-slate-700">
-                            <tr>
-                              <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Artículo</th>
-                              <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">SKU</th>
-                              <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Stock</th>
-                              <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Campos Dinámicos</th>
-                            </tr>
-                          </thead>
-                           <tbody class="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
-                            @for (item of articulos(); track item.id) {
+                    <section class="bg-white dark:bg-slate-800/50 p-6 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700">
+                      <h2 class="text-xl font-semibold mb-4 border-b border-slate-200 dark:border-slate-700 pb-3 text-slate-800 dark:text-slate-100">Módulo de Control de Existencias</h2>
+                      <div class="rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+                        <div class="overflow-x-auto">
+                          <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                            <thead class="bg-slate-50 dark:bg-slate-700/50">
                               <tr>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-white">{{ item.nombre }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">{{ item.sku }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">{{ item.stock }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
-                                  {{ item.custom_fields | json }}
-                                </td>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Artículo</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">SKU</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Stock</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Campos Dinámicos</th>
                               </tr>
-                            }
-                            @if (articulos().length === 0) {
-                              <tr><td colspan="4" class="px-6 py-4 text-center text-slate-500 dark:text-slate-400">No hay artículos para este negocio.</td></tr>
-                            }
-                          </tbody>
-                        </table>
+                            </thead>
+                             <tbody class="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
+                              @for (item of articulos(); track item.id) {
+                                <tr>
+                                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-white">{{ item.nombre }}</td>
+                                  <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400 font-mono">{{ item.sku }}</td>
+                                  <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">{{ item.stock }}</td>
+                                  <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400 font-mono text-xs">
+                                    {{ item.custom_fields | json }}
+                                  </td>
+                                </tr>
+                              }
+                              @if (articulos().length === 0) {
+                                <tr><td colspan="4" class="px-6 py-8 text-center text-slate-500 dark:text-slate-400">No hay artículos para este negocio.</td></tr>
+                              }
+                            </tbody>
+                          </table>
+                        </div>
                       </div>
                     </section>
 
-                     <section class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-lg">
-                      <h2 class="text-xl font-semibold mb-4 border-b dark:border-slate-700 pb-3">Importación Masiva (Simulación Edge Function)</h2>
+                     <section class="bg-white dark:bg-slate-800/50 p-6 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700">
+                      <h2 class="text-xl font-semibold mb-4 border-b border-slate-200 dark:border-slate-700 pb-3 text-slate-800 dark:text-slate-100">Importación Masiva (Simulación)</h2>
                       @if (configuracionCatalogo()) {
                         <div class="space-y-4">
                           <p class="text-sm text-slate-600 dark:text-slate-400">Suba un archivo. La Edge Function (simulada) validará cada fila contra el esquema dinámico de este negocio.</p>
-                          <div class="flex items-center space-x-4">
-                            <input id="file-upload" type="file" (change)="onFileSelected($event)" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"/>
-                            <button (click)="iniciarProcesoImportacion()" [disabled]="!fileToUpload() || isUploading()" class="flex-shrink-0 py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 disabled:bg-green-300">
+                          <div class="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-4">
+                            <input id="file-upload" type="file" (change)="onFileSelected($event)" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/50 dark:file:text-blue-300 dark:hover:file:bg-blue-900"/>
+                            <button (click)="iniciarProcesoImportacion()" [disabled]="!fileToUpload() || isUploading()" class="w-full sm:w-auto flex-shrink-0 py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 disabled:bg-green-400 dark:disabled:bg-green-800 disabled:cursor-not-allowed">
                               {{ isUploading() ? 'Procesando...' : 'Importar' }}
                             </button>
                           </div>
                           @if (uploadStatus()) {
-                            <p class="text-sm p-3 rounded-md" [class]="uploadStatus().startsWith('Error') ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'">{{ uploadStatus() }}</p>
+                            <p class="text-sm p-3 rounded-lg mt-4" [class]="uploadStatus().startsWith('Error') ? 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200' : 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200'">{{ uploadStatus() }}</p>
                           }
                         </div>
                       } @else {
@@ -168,37 +180,37 @@
                     </section>
                   </div>
                   <aside class="space-y-8">
-                     <section class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-lg">
-                      <h2 class="text-xl font-semibold mb-4 border-b dark:border-slate-700 pb-3">Agregar Artículo</h2>
+                     <section class="bg-white dark:bg-slate-800/50 p-6 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700">
+                      <h2 class="text-xl font-semibold mb-4 border-b border-slate-200 dark:border-slate-700 pb-3 text-slate-800 dark:text-slate-100">Agregar Artículo</h2>
                       @if (configuracionCatalogo(); as config) {
-                        <form [formGroup]="articuloForm" (ngSubmit)="agregarArticulo()" class="space-y-4">
+                        <form [formGroup]="articuloForm" (ngSubmit)="agregarArticulo()" class="space-y-5">
                           <div>
                             <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Nombre del Artículo</label>
-                            <input formControlName="nombre" placeholder="Bota Vaquera" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm bg-white dark:bg-slate-700">
+                            <input formControlName="nombre" placeholder="Bota Vaquera" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm bg-white dark:bg-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                           </div>
                           <div class="grid grid-cols-2 gap-4">
                             <div>
                               <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">SKU</label>
-                              <input formControlName="sku" placeholder="BB-BTV-002" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm bg-white dark:bg-slate-700">
+                              <input formControlName="sku" placeholder="BB-BTV-002" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm bg-white dark:bg-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                             </div>
                             <div>
                               <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Stock Inicial</label>
-                              <input formControlName="stock" type="number" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm bg-white dark:bg-slate-700">
+                              <input formControlName="stock" type="number" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm bg-white dark:bg-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                             </div>
                           </div>
-                          <div formGroupName="dynamicForm" class="space-y-4 pt-4 border-t dark:border-slate-700">
+                          <div formGroupName="dynamicForm" class="space-y-5 pt-5 border-t border-slate-200 dark:border-slate-700">
                             <h3 class="text-lg font-medium text-slate-900 dark:text-slate-200">{{ config.nombre_catalogo }}</h3>
                             @for (field of config.fields_definition; track field.key) {
                               <div>
                                 <label [for]="field.key" class="block text-sm font-medium text-slate-700 dark:text-slate-300">{{ field.label }} {{ field.required ? '*' : '' }}</label>
                                 @switch (field.type) {
-                                  @case ('text') { <input [id]="field.key" [formControlName]="field.key" type="text" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm bg-white dark:bg-slate-700"> }
-                                  @case ('number') { <input [id]="field.key" [formControlName]="field.key" type="number" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm bg-white dark:bg-slate-700"> }
+                                  @case ('text') { <input [id]="field.key" [formControlName]="field.key" type="text" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm bg-white dark:bg-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"> }
+                                  @case ('number') { <input [id]="field.key" [formControlName]="field.key" type="number" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm bg-white dark:bg-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"> }
                                   @case ('boolean') {
                                     <div class="mt-2">
                                       <label class="inline-flex items-center cursor-pointer">
                                         <input type="checkbox" [id]="field.key" [formControlName]="field.key" class="sr-only peer">
-                                        <div class="relative w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 rounded-full peer dark:bg-slate-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                        <div class="relative w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-slate-600 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-blue-600"></div>
                                       </label>
                                     </div>
                                   }
@@ -206,12 +218,12 @@
                               </div>
                             }
                           </div>
-                          <button type="submit" [disabled]="!articuloForm.valid || isSubmitting()" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 dark:disabled:bg-blue-800">
+                          <button type="submit" [disabled]="!articuloForm.valid || isSubmitting()" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 dark:disabled:bg-blue-800 disabled:cursor-not-allowed">
                             {{ isSubmitting() ? 'Guardando...' : 'Guardar Artículo' }}
                           </button>
                         </form>
                       } @else {
-                        <div class="text-center p-6 border-2 border-dashed rounded-lg dark:border-slate-600">
+                        <div class="text-center p-6 border-2 border-dashed rounded-lg border-slate-300 dark:border-slate-600">
                           <p class="text-slate-500 dark:text-slate-400">No hay configuración de catálogo para "{{ company.nombre }}".</p>
                         </div>
                       }
@@ -226,13 +238,13 @@
 
       <!-- VISTA: ADMINISTRACIÓN DE USUARIOS -->
       @case ('user_management') {
-         <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-          <header class="mb-8 flex justify-between items-center">
+         <div class="container mx-auto py-8 md:py-12 px-4 sm:px-6 lg:px-8">
+          <header class="mb-8 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
             <div>
-              <h1 class="text-3xl font-bold text-slate-800 dark:text-white">Administración de Jurisdicción y Acceso (ACL)</h1>
+              <h1 class="text-3xl font-bold text-slate-800 dark:text-white">Gestión de Acceso (ACL)</h1>
               <p class="text-slate-500 dark:text-slate-400 mt-1">Asigne o revoque el acceso de los usuarios a los negocios.</p>
             </div>
-             <button (click)="navigateToLauncher()" class="inline-flex items-center px-4 py-2 border border-slate-300 dark:border-slate-600 text-sm font-medium rounded-md text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700">
+             <button (click)="navigateToLauncher()" class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 border border-slate-300 dark:border-slate-600 text-sm font-medium rounded-md text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700">
               <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" /></svg>
               Volver al Launcher
             </button>
@@ -240,9 +252,9 @@
 
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             @for(user of usuariosParaAdmin(); track user.id) {
-              <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 flex flex-col justify-between">
+              <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 p-6 flex flex-col justify-between">
                 <div>
-                  <p class="font-bold text-slate-900 dark:text-white">{{ user.email }}</p>
+                  <p class="font-bold text-lg text-slate-900 dark:text-white">{{ user.email }}</p>
                   <p class="text-sm font-mono text-slate-500 dark:text-slate-400">{{ user.id }}</p>
 
                   <div class="mt-4">
@@ -250,16 +262,16 @@
                       @if(user.empresas.length > 0) {
                         <div class="flex flex-wrap gap-2">
                           @for(empresa of user.empresas; track empresa.id) {
-                            <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">{{ empresa.nombre }}</span>
+                            <span class="px-2.5 py-1 text-xs rounded-full bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200">{{ empresa.nombre }}</span>
                           }
                         </div>
                       } @else {
-                        <span class="text-xs text-slate-400 italic">Sin asignación</span>
+                        <span class="text-xs text-slate-400 dark:text-slate-500 italic">Sin asignación</span>
                       }
                   </div>
                 </div>
 
-                <div class="mt-6">
+                <div class="mt-6 border-t border-slate-200 dark:border-slate-700 pt-4">
                   <button (click)="openAccessEditor(user)" class="w-full text-center text-sm font-semibold text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors">
                     Gestionar Acceso...
                   </button>
@@ -274,28 +286,30 @@
 
   <!-- Modal de Edición de Acceso -->
   @if (editingUser(); as user) {
-    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50" (click)="closeAccessEditor()">
-      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-md p-6 m-4" (click)="$event.stopPropagation()">
-        <h2 class="text-xl font-bold text-slate-900 dark:text-white">Gestionar Acceso</h2>
-        <p class="text-slate-600 dark:text-slate-400 mb-6">Editando permisos para <span class="font-semibold">{{ user.email }}</span></p>
+    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" (click)="closeAccessEditor()">
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-md" (click)="$event.stopPropagation()">
+        <div class="p-6 sm:p-8 border-b border-slate-200 dark:border-slate-700">
+          <h2 class="text-xl font-bold text-slate-900 dark:text-white">Gestionar Acceso</h2>
+          <p class="text-slate-600 dark:text-slate-400 mt-1">Editando permisos para <span class="font-semibold">{{ user.email }}</span></p>
+        </div>
         
-        <div class="space-y-4 max-h-64 overflow-y-auto pr-2">
+        <div class="p-6 sm:p-8 space-y-4 max-h-64 overflow-y-auto">
           @for (empresa of empresas(); track empresa.id) {
             <label class="flex items-center justify-between p-3 rounded-lg bg-slate-100 dark:bg-slate-700/50 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer">
               <span class="font-medium text-slate-800 dark:text-slate-200">{{ empresa.nombre }}</span>
               <input type="checkbox"
                 [checked]="editedUserAccess().get(empresa.id)"
                 (change)="updateEditedAccess(empresa.id, $event)"
-                class="h-5 w-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                class="h-5 w-5 rounded border-slate-400 dark:border-slate-500 text-blue-600 focus:ring-blue-500 bg-transparent dark:bg-transparent dark:focus:ring-offset-slate-800">
             </label>
           }
         </div>
 
-        <div class="mt-8 flex justify-end space-x-3">
-          <button (click)="closeAccessEditor()" class="px-4 py-2 text-sm font-medium rounded-md text-slate-700 dark:text-slate-200 bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500">
+        <div class="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-b-xl flex justify-end space-x-3">
+          <button (click)="closeAccessEditor()" class="px-4 py-2 text-sm font-medium rounded-md text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-600 hover:bg-slate-100 dark:hover:bg-slate-500 border border-slate-300 dark:border-slate-500 shadow-sm">
             Cancelar
           </button>
-          <button (click)="saveUserAccess()" [disabled]="isSubmitting()" class="px-4 py-2 text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 dark:disabled:bg-blue-800">
+          <button (click)="saveUserAccess()" [disabled]="isSubmitting()" class="px-4 py-2 text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 dark:disabled:bg-blue-800 shadow-sm disabled:cursor-not-allowed">
             {{ isSubmitting() ? 'Guardando...' : 'Guardar Cambios' }}
           </button>
         </div>
@@ -305,22 +319,24 @@
 
   <!-- Modal de Creación de Negocio -->
   @if (isCreatingBusiness()) {
-    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50" (click)="closeCreateBusinessModal()">
-      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-md p-6 m-4" (click)="$event.stopPropagation()">
+    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" (click)="closeCreateBusinessModal()">
+      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-md" (click)="$event.stopPropagation()">
         <form [formGroup]="empresaForm" (ngSubmit)="crearEmpresa()">
-            <h2 class="text-xl font-bold text-slate-900 dark:text-white">Establecer Nuevo Negocio</h2>
-            <p class="text-slate-600 dark:text-slate-400 mb-6">Ingrese el nombre para el nuevo grupo empresarial.</p>
-            
-            <div>
-              <label for="business-name" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Nombre del Negocio</label>
-              <input id="business-name" formControlName="nombre" placeholder="Ej. 'SIAC Textiles'" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-white dark:bg-slate-700">
+            <div class="p-6 sm:p-8">
+              <h2 class="text-xl font-bold text-slate-900 dark:text-white">Establecer Nuevo Negocio</h2>
+              <p class="text-slate-600 dark:text-slate-400 mt-1 mb-6">Ingrese el nombre para el nuevo grupo empresarial.</p>
+              
+              <div>
+                <label for="business-name" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Nombre del Negocio</label>
+                <input id="business-name" formControlName="nombre" placeholder="Ej. 'SIAC Textiles'" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700">
+              </div>
             </div>
 
-            <div class="mt-8 flex justify-end space-x-3">
-              <button type="button" (click)="closeCreateBusinessModal()" class="px-4 py-2 text-sm font-medium rounded-md text-slate-700 dark:text-slate-200 bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500">
+            <div class="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-b-xl flex justify-end space-x-3">
+              <button type="button" (click)="closeCreateBusinessModal()" class="px-4 py-2 text-sm font-medium rounded-md text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-600 hover:bg-slate-100 dark:hover:bg-slate-500 border border-slate-300 dark:border-slate-500 shadow-sm">
                 Cancelar
               </button>
-              <button type="submit" [disabled]="empresaForm.invalid || isSubmitting()" class="px-4 py-2 text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 dark:disabled:bg-blue-800">
+              <button type="submit" [disabled]="empresaForm.invalid || isSubmitting()" class="px-4 py-2 text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 dark:disabled:bg-blue-800 shadow-sm disabled:cursor-not-allowed">
                 {{ isSubmitting() ? 'Creando...' : 'Crear Negocio' }}
               </button>
             </div>
