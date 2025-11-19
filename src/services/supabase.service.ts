@@ -14,6 +14,7 @@ let MOCK_EMPRESA_USUARIOS: EmpresaUsuario[] = [];
 let MOCK_SUCURSALES: Sucursal[] = [];
 
 let MOCK_MODULOS: Modulo[] = [];
+let nextModuloId = 1;
 
 @Injectable({
   providedIn: 'root',
@@ -146,7 +147,20 @@ export class SupabaseService {
     return this.from<Sucursal>('branches').insert(nuevaSucursal).pipe(map(res => res.data[0]));
   }
 
-  addEmpresa(empresa: Omit<Empresa, 'id' | 'root_admin_id'>): Observable<Empresa> {
+  updateSucursal(sucursal: Sucursal): Observable<Sucursal> {
+    const index = MOCK_SUCURSALES.findIndex(s => s.id === sucursal.id);
+    if (index !== -1) {
+        MOCK_SUCURSALES[index] = sucursal;
+    }
+    return of(sucursal).pipe(delay(400));
+  }
+
+  deleteSucursal(sucursalId: number): Observable<void> {
+    MOCK_SUCURSALES = MOCK_SUCURSALES.filter(s => s.id !== sucursalId);
+    return of(undefined).pipe(delay(400));
+  }
+
+  addEmpresa(empresa: Omit<Empresa, 'id' | 'root_admin_id' | 'logo_url' | 'logo_icon_url'>): Observable<Empresa> {
     const rootAdminId = this.currentUser()?.id;
     if (!rootAdminId) {
       return new Observable(observer => observer.error('No authenticated user'));
@@ -157,6 +171,8 @@ export class SupabaseService {
       ...empresa,
       id: nuevoId,
       root_admin_id: rootAdminId,
+      logo_url: 'https://bupapjirkilnfoswgtsg.supabase.co/storage/v1/object/public/assets/logo.png',
+      logo_icon_url: 'https://bupapjirkilnfoswgtsg.supabase.co/storage/v1/object/public/assets/icono.png'
     };
     MOCK_EMPRESAS.push(nuevaEmpresa);
 
@@ -168,8 +184,17 @@ export class SupabaseService {
     MOCK_EMPRESA_USUARIOS.push(newAssignment);
 
     // Simulate adding default modules for a new company
-    MOCK_MODULOS.push({ company_id: nuevoId, nombre: 'Ubicaciones Físicas' });
+    MOCK_MODULOS.push({ id: nextModuloId++, company_id: nuevoId, nombre: 'Ubicaciones Físicas' });
 
     return of(nuevaEmpresa).pipe(delay(500));
+  }
+  
+  updateEmpresa(empresa: Pick<Empresa, 'id' | 'nombre' | 'logo_url' | 'logo_icon_url'>): Observable<Empresa> {
+      const index = MOCK_EMPRESAS.findIndex(e => e.id === empresa.id);
+      if (index > -1) {
+          MOCK_EMPRESAS[index] = { ...MOCK_EMPRESAS[index], ...empresa };
+          return of(MOCK_EMPRESAS[index]).pipe(delay(400));
+      }
+      return new Observable(observer => observer.error('Empresa not found'));
   }
 }

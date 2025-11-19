@@ -8,6 +8,8 @@ export interface Empresa {
   id: string;
   nombre: string;
   root_admin_id: string;
+  logo_url?: string;
+  logo_icon_url?: string;
 }
 
 export interface EmpresaUsuario {
@@ -25,6 +27,7 @@ export interface Sucursal {
 }
 
 export interface Modulo {
+  id: number;
   company_id: string;
   nombre: string;
 }
