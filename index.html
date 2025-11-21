@@ -6,12 +6,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- 
-    IMPORTANTE: Reemplace 'YOUR_GOOGLE_MAPS_API_KEY' con su clave de API real de Google Maps.
-    Debe habilitar "Maps JavaScript API" y "Places API" en su proyecto de Google Cloud.
-    https://developers.google.com/maps/documentation/javascript/get-api-key
-  -->
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCU03WBaVDKemAlySOKTWZgrACYpcwE1WY&libraries=places" async defer></script>
   <style>
     /* Custom scrollbar for better aesthetics */
     ::-webkit-scrollbar {
@@ -31,6 +25,7 @@
     .pac-container {
       background-color: #fff;
       color: #000;
+      z-index: 10000; /* Ensure it appears above modals */
     }
   </style>
 <script type="importmap">
@@ -51,6 +46,13 @@
   }
 }
 </script>
+<script>
+  // This function is called by the Google Maps script if the API key is invalid.
+  function gm_authFailure() {
+    window.dispatchEvent(new CustomEvent('google-maps-auth-error'));
+  }
+</script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBRyM3e8DXDeKQ_xOip9VXnCZRQ11HsNe4&libraries=places" async defer></script>
 </head>
 <body class="bg-slate-100 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
   <app-root></app-root>

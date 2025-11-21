@@ -35,3 +35,23 @@ export interface Modulo {
 export interface UsuarioParaAdmin extends Usuario {
   empresas: Empresa[];
 }
+
+export interface AvailableModule {
+  name: string;
+  category: string;
+}
+
+export interface Producto {
+  id: number;
+  company_id: string;
+  nombre: string;
+  sku: string;
+  descripcion: string;
+  custom_fields: { [key: string]: any };
+}
+
+export interface StockInventario {
+  product_id: number;
+  sucursal_id: number;
+  cantidad: number;
+}

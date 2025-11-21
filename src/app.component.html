@@ -1,17 +1,16 @@
 <div class="min-h-screen bg-slate-100 dark:bg-slate-900 text-slate-900 dark:text-slate-100 antialiased">
   
-  @if (isLoading()) {
+  @if (isLoading() && !activeCompanyId()) {
     <div class="flex items-center justify-center h-screen">
       <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
     </div>
   } @else {
     @switch (activeView()) {
       
-      <!-- VISTA: LAUNCHER (Área de Negocios y Aplicaciones) -->
       @case ('launcher') {
         <div class="container mx-auto py-8 md:py-12 px-4 sm:px-6 lg:px-8">
           <header class="text-center mb-12">
-            <img [src]="activeCompanyLogo()" alt="SIAC ERP Logo" class="h-20 w-auto mx-auto mb-4">
+            <img [src]="'https://bupapjirkilnfoswgtsg.supabase.co/storage/v1/object/public/assets/logo.png'" alt="SIAC ERP Logo" class="h-20 w-auto mx-auto mb-4">
             <h1 class="text-3xl md:text-4xl font-extrabold text-slate-800 dark:text-white tracking-tight">Sistema Integral de Administración</h1>
             <p class="mt-4 max-w-2xl mx-auto text-lg text-slate-500 dark:text-slate-400">Seleccione un negocio para administrar o utilice las herramientas de gestión global.</p>
           </header>
@@ -29,7 +28,10 @@
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
             @for(empresa of empresas(); track empresa.id) {
-              <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 group">
+              <div class="relative bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 group">
+                <button (click)="openModuleInstaller(empresa)" class="absolute top-4 right-4 p-2 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-blue-100 hover:text-blue-600 dark:hover:bg-blue-900/50 dark:hover:text-blue-400 transition-colors z-10" aria-label="Instalar módulos">
+                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                </button>
                 <div class="p-6 md:p-8">
                   <h2 class="text-2xl font-bold text-slate-900 dark:text-white">{{ empresa.nombre }}</h2>
                   <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Grupo Empresarial</p>
@@ -60,190 +62,246 @@
         </div>
       }
 
-      <!-- VISTA: DASHBOARD DE NEGOCIO -->
       @case ('business_dashboard') {
-        <div class="flex flex-col md:flex-row">
-          <aside class="bg-white dark:bg-slate-800 w-full md:w-72 p-4 md:p-6 flex-shrink-0 border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-700">
-            <div class="flex items-center gap-4 mb-8">
-              <img [src]="activeCompanyIcon()" alt="SIAC ERP Icono" class="h-12 w-12 object-contain">
-              <div>
-                <p class="text-xs text-slate-500 dark:text-slate-400">Panel de Negocio</p>
+        <div class="flex h-screen">
+          <aside class="bg-white dark:bg-slate-800 flex flex-col flex-shrink-0 border-r border-slate-200 dark:border-slate-700 transition-all duration-300" [class.w-72]="!isSidebarCollapsed()" [class.w-20]="isSidebarCollapsed()">
+            <button (click)="openEditBusinessModal()" class="group p-4 border-b border-slate-200 dark:border-slate-700 flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors" [class.justify-center]="isSidebarCollapsed()">
+              <img [src]="activeCompanyIcon()" alt="Icono de la empresa" class="h-10 w-10 flex-shrink-0 rounded-full object-cover">
+              <div class="flex-1 overflow-hidden" [class.hidden]="isSidebarCollapsed()">
                 @if (activeCompany(); as company) {
-                   <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100">{{ company.nombre }}</h2>
+                   <h2 class="text-base font-bold text-slate-800 dark:text-slate-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400">{{ company.nombre }}</h2>
                 }
+                <p class="text-xs text-slate-500 dark:text-slate-400">Panel de Negocio</p>
               </div>
-            </div>
-            <nav>
-              <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 px-3">Navegación</h3>
-              <button (click)="navigateToLauncher()" class="w-full text-left flex items-center p-3 rounded-lg bg-slate-100 dark:bg-slate-700/50 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors duration-200">
-                <svg class="w-5 h-5 mr-3 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" /></svg>
-                <span>Volver al Launcher</span>
+            </button>
+
+            <nav class="flex-1 px-3 py-4 space-y-2">
+              <button (click)="navigateToLauncher()" class="w-full flex items-center p-3 rounded-lg bg-slate-100 dark:bg-slate-700/50 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors duration-200" [class.justify-center]="isSidebarCollapsed()">
+                <svg class="w-6 h-6 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" /></svg>
+                <span class="ml-3 flex-1 text-left" [class.hidden]="isSidebarCollapsed()">Volver al Launcher</span>
               </button>
             </nav>
+            <div class="px-3 py-4 border-t border-slate-200 dark:border-slate-700">
+               <button (click)="toggleSidebar()" class="w-full flex items-center p-3 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 font-medium transition-colors duration-200" [class.justify-center]="isSidebarCollapsed()">
+                <svg class="w-6 h-6 flex-shrink-0" [class.rotate-180]="isSidebarCollapsed()" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" /></svg>
+                <span class="ml-3 flex-1 text-left" [class.hidden]="isSidebarCollapsed()">Ocultar Menú</span>
+              </button>
+            </div>
           </aside>
 
           <main class="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto bg-slate-50 dark:bg-slate-950">
             @if (activeCompany(); as company) {
-              <div class="max-w-4xl mx-auto">
+              <div class="max-w-6xl mx-auto">
                 <header class="mb-8 flex justify-between items-start">
                   <div>
                     <h1 class="text-3xl font-bold text-slate-800 dark:text-white">Panel de {{ company.nombre }}</h1>
                     <p class="text-slate-500 dark:text-slate-400 mt-1">Gestión de recursos y validación de arquitectura RLS.</p>
                   </div>
-                  <button (click)="openEditBusinessModal()" class="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-700 dark:hover:text-slate-200 transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
-                    </svg>
+                  <button (click)="openModuleInstaller(company)" class="inline-flex items-center gap-2 px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                    Instalar Apps
                   </button>
                 </header>
 
                 <div class="space-y-8">
-                  <section class="bg-white dark:bg-slate-800/50 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700">
-                    <div class="p-6 flex justify-between items-center border-b border-slate-200 dark:border-slate-700">
-                        <h2 class="text-xl font-semibold text-slate-800 dark:text-slate-100">Módulo de Ubicaciones Físicas</h2>
-                        @if(locationModuleState() === 'view') {
-                          <button (click)="startAddingSucursal()" class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700">
-                            <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-                            Agregar Ubicación
-                          </button>
-                        }
-                    </div>
-
-                    <div class="p-6">
-                      @if (locationModuleState() === 'view') {
-                        @if (sucursales().length > 0) {
-                          <div class="space-y-4">
-                            @for (sucursal of sucursales(); track sucursal.id) {
-                              <div class="bg-slate-100 dark:bg-slate-700/50 p-4 rounded-lg border border-slate-200 dark:border-slate-600 flex justify-between items-center">
-                                <div>
-                                  <p class="font-bold text-slate-800 dark:text-slate-200">{{ sucursal.nombre }}</p>
-                                  <p class="text-sm text-slate-600 dark:text-slate-400">{{ sucursal.direccion }}</p>
-                                  <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 font-mono">Lat: {{ sucursal.latitud | number:'1.4-4' }}, Lon: {{ sucursal.longitud | number:'1.4-4' }}</p>
+                  @if (getModulesForCompany(company.id).length === 0) {
+                     <div class="text-center py-16 px-4 bg-white dark:bg-slate-800/50 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700">
+                        <svg class="mx-auto h-12 w-12 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" /></svg>
+                        <h3 class="mt-2 text-lg font-medium text-slate-900 dark:text-white">Panel de Negocio Vacío</h3>
+                        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Instale su primera aplicación para comenzar a gestionar este negocio.</p>
+                      </div>
+                  }
+                  @if (isLocationsModuleInstalled()) {
+                    <section class="bg-white dark:bg-slate-800/50 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700">
+                      <div class="p-6 flex justify-between items-center border-b border-slate-200 dark:border-slate-700">
+                          <h2 class="text-xl font-semibold text-slate-800 dark:text-slate-100">Módulo de Ubicaciones Físicas</h2>
+                          @if(locationModuleState() === 'view') {
+                            <button (click)="startAddingSucursal()" class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700">
+                              <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                              Agregar Ubicación
+                            </button>
+                          }
+                      </div>
+                      <div class="p-6">
+                        @if (locationModuleState() === 'view') {
+                          @if (sucursales().length > 0) {
+                            <div class="space-y-4">
+                              @for (sucursal of sucursales(); track sucursal.id) {
+                                <div class="bg-slate-100 dark:bg-slate-700/50 p-4 rounded-lg border border-slate-200 dark:border-slate-600 flex justify-between items-center">
+                                  <div>
+                                    <p class="font-bold text-slate-800 dark:text-slate-200">{{ sucursal.nombre }}</p>
+                                    <p class="text-sm text-slate-600 dark:text-slate-400">{{ sucursal.direccion }}</p>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 font-mono">Lat: {{ sucursal.latitud | number:'1.4-4' }}, Lon: {{ sucursal.longitud | number:'1.4-4' }}</p>
+                                  </div>
+                                  <div class="flex items-center gap-2">
+                                     <button (click)="startEditingSucursal(sucursal)" class="p-2 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-full hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" /><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 7.125L18 8.625" /></svg>
+                                     </button>
+                                      <button (click)="eliminarSucursal(sucursal.id)" class="p-2 text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 rounded-full hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
+                                     </button>
+                                  </div>
                                 </div>
-                                <div class="flex items-center gap-2">
-                                   <button (click)="startEditingSucursal(sucursal)" class="p-2 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-full hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
-                                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" /><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 7.125L18 8.625" /></svg>
-                                   </button>
-                                    <button (click)="eliminarSucursal(sucursal.id)" class="p-2 text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 rounded-full hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
-                                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
-                                   </button>
-                                </div>
-                              </div>
-                            }
-                          </div>
+                              }
+                            </div>
+                          } @else {
+                            <div class="text-center py-8 px-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
+                              <svg class="mx-auto h-12 w-12 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" /></svg>
+                              <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">Sin ubicaciones</h3>
+                              <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Comience agregando su primera ubicación física.</p>
+                            </div>
+                          }
                         } @else {
-                          <div class="text-center py-8 px-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
-                            <svg class="mx-auto h-12 w-12 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                              <path vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l5.447 2.724A1 1 0 0021 16.382V5.618a1 1 0 00-1.447-.894L15 7m-6 13v- hükümet" />
-                            </svg>
-                            <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">Sin ubicaciones</h3>
-                            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Comience agregando su primera ubicación física.</p>
+                          <div class="mb-4">
+                            @if (editingSucursal(); as sucursal) {
+                              <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-100">Editando Ubicación: <span class="text-blue-600 dark:text-blue-400">{{ sucursal.nombre }}</span></h3>
+                            } @else {
+                              <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-100">Agregar Nueva Ubicación</h3>
+                            }
                           </div>
-                        }
-                      } @else if (locationModuleState() === 'add') {
-                        <!-- FORMULARIO PARA AGREGAR NUEVA UBICACIÓN CON IFRAME -->
-                        <form [formGroup]="sucursalForm" (ngSubmit)="saveSucursal()" class="space-y-6">
-                           <div>
-                              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">1. Asigne un nombre a la ubicación</label>
-                              <input formControlName="nombre" placeholder="Ej: Bodega Central, Oficina Principal..." class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 dark:placeholder:text-slate-400">
-                           </div>
-
-                           <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">2. Seleccione la dirección en el mapa</label>
-                            <div class="mt-1 w-full h-[450px] rounded-lg overflow-hidden border border-slate-300 dark:border-slate-600 shadow-sm">
-                              <iframe [src]="addressSelectionUrl" width="100%" height="100%" style="border:0;" loading="lazy"></iframe>
+                          <form [formGroup]="sucursalForm" (ngSubmit)="saveSucursal()" class="space-y-6">
+                            <div>
+                              <label for="sucursal-nombre" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Nombre de la ubicación</label>
+                              <input id="sucursal-nombre" formControlName="nombre" placeholder="Ej: Bodega Central, Oficina Principal..." class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 dark:placeholder:text-slate-400">
                             </div>
-                           </div>
-
-                           <div class="p-4 bg-slate-100 dark:bg-slate-700/50 rounded-lg space-y-3 border border-slate-200 dark:border-slate-600">
-                             <h3 class="font-semibold text-slate-800 dark:text-slate-200">Datos de la Dirección Seleccionada</h3>
+                            <div>
+                              <label for="sucursal-direccion" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Dirección</label>
+                              <input #addressInput id="sucursal-direccion" type="text" formControlName="direccion" placeholder="Escriba y seleccione una dirección..." class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 dark:placeholder:text-slate-400">
+                               @if (mapsApiStatus() === 'loading') { <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">Cargando autocompletado...</p> }
+                               @if (mapsApiStatus() === 'error') { <p class="mt-2 text-xs text-red-600 dark:text-red-400">No se pudo cargar el autocompletado.</p> }
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                               <div>
-                                <label class="block text-xs font-medium text-slate-500 dark:text-slate-400">Dirección</label>
-                                <input formControlName="direccion" class="mt-1 block w-full rounded-md border-slate-300 dark:border-slate-500 shadow-sm bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 cursor-not-allowed text-sm">
+                                <label for="sucursal-latitud" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Latitud</label>
+                                <input id="sucursal-latitud" type="number" formControlName="latitud" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm bg-slate-100 dark:bg-slate-800 cursor-not-allowed">
                               </div>
-                              <div class="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <label class="block text-xs font-medium text-slate-500 dark:text-slate-400">Latitud</label>
-                                    <input type="number" formControlName="latitud" class="mt-1 block w-full rounded-md border-slate-300 dark:border-slate-500 shadow-sm bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 cursor-not-allowed text-sm">
-                                  </div>
-                                  <div>
-                                    <label class="block text-xs font-medium text-slate-500 dark:text-slate-400">Longitud</label>
-                                    <input type="number" formControlName="longitud" class="mt-1 block w-full rounded-md border-slate-300 dark:border-slate-500 shadow-sm bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 cursor-not-allowed text-sm">
-                                  </div>
+                              <div>
+                                <label for="sucursal-longitud" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Longitud</label>
+                                <input id="sucursal-longitud" type="number" formControlName="longitud" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm bg-slate-100 dark:bg-slate-800 cursor-not-allowed">
                               </div>
-                           </div>
-                           
-                           <div class="flex justify-end pt-2 gap-3">
-                              <button type="button" (click)="cancelEditOrAdd()" class="px-4 py-2 text-sm font-medium rounded-md text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-600 hover:bg-slate-100 dark:hover:bg-slate-500 border border-slate-300 dark:border-slate-500 shadow-sm">
-                                Cancelar
-                              </button>
-                              <button type="submit" [disabled]="sucursalForm.invalid || isSubmitting()" class="inline-flex justify-center py-2 px-6 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 dark:disabled:bg-blue-800 disabled:cursor-not-allowed">
-                                {{ isSubmitting() ? 'Guardando...' : 'Guardar Ubicación' }}
-                              </button>
                             </div>
-                        </form>
-                      } @else if (locationModuleState() === 'edit') {
-                         <!-- FORMULARIO PARA EDITAR UBICACIÓN CON JS API -->
-                         @switch (mapsApiStatus()) {
-                            @case ('loading') {
-                              <div class="flex items-center justify-center p-8 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
-                                <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mr-3"></div>
-                                <span>Cargando mapa...</span>
+                             <div class="flex justify-end pt-2 gap-3">
+                                <button type="button" (click)="cancelEditOrAdd()" class="px-4 py-2 text-sm font-medium rounded-md text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-600 hover:bg-slate-100 dark:hover:bg-slate-500 border border-slate-300 dark:border-slate-500 shadow-sm">Cancelar</button>
+                                <button type="submit" [disabled]="sucursalForm.invalid || isSubmitting()" class="inline-flex justify-center py-2 px-6 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50">
+                                  {{ isSubmitting() ? 'Guardando...' : 'Guardar Cambios' }}
+                                </button>
+                             </div>
+                          </form>
+                        }
+                      </div>
+                    </section>
+                  }
+                  
+                  @if (isInventoryModuleInstalled()) {
+                    <section class="bg-white dark:bg-slate-800/50 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700">
+                      <div class="p-6 border-b border-slate-200 dark:border-slate-700">
+                        <div class="flex justify-between items-center">
+                          <h2 class="text-xl font-semibold text-slate-800 dark:text-slate-100">Módulo de Inventario</h2>
+                           <div class="flex items-center gap-2">
+                            <button (click)="openImportModal()" class="inline-flex items-center justify-center px-4 py-2 border border-slate-300 dark:border-slate-600 text-sm font-medium rounded-lg shadow-sm text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 mr-2"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-11.25a.75.75 0 00-1.5 0v4.59L7.3 9.7a.75.75 0 00-1.1 1.02l3.25 3.5a.75.75 0 001.1 0l3.25-3.5a.75.75 0 10-1.1-1.02l-1.95 2.1V6.75z" clip-rule="evenodd" /></svg>
+                                Importar
+                            </button>
+                            <button (click)="startAddingProducto()" class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700">
+                              <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                              Nuevo Producto
+                            </button>
+                          </div>
+                        </div>
+                         <div class="mt-4 border-b border-slate-200 dark:border-slate-700">
+                            <nav class="-mb-px flex space-x-6" aria-label="Tabs">
+                              <button (click)="activeInventoryTab.set('products')" [class.border-blue-500]="activeInventoryTab() === 'products'" [class.text-blue-600]="activeInventoryTab() === 'products'" [class.dark:text-blue-400]="activeInventoryTab() === 'products'" class="border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:border-slate-300 dark:hover:border-slate-500 whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm">Productos</button>
+                              <button (click)="activeInventoryTab.set('stock')" [class.border-blue-500]="activeInventoryTab() === 'stock'" [class.text-blue-600]="activeInventoryTab() === 'stock'" [class.dark:text-blue-400]="activeInventoryTab() === 'stock'" class="border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:border-slate-300 dark:hover:border-slate-500 whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm">Stock por Ubicación</button>
+                            </nav>
+                          </div>
+                      </div>
+                      <div class="p-6">
+                        @switch(activeInventoryTab()) {
+                          @case('products') {
+                            @if(productos().length > 0) {
+                              <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                                  <thead class="bg-slate-50 dark:bg-slate-700/50">
+                                    <tr>
+                                      <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Producto</th>
+                                      <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">SKU</th>
+                                      <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Descripción</th>
+                                      <th scope="col" class="relative px-6 py-3"><span class="sr-only">Acciones</span></th>
+                                    </tr>
+                                  </thead>
+                                  <tbody class="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
+                                    @for(producto of productos(); track producto.id) {
+                                      <tr>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-white">{{ producto.nombre }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400 font-mono">{{ producto.sku }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400 truncate max-w-xs">{{ producto.descripcion }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                          <div class="flex items-center justify-end gap-2">
+                                            <button (click)="startEditingProducto(producto)" class="p-2 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-full hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
+                                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" /><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 7.125L18 8.625" /></svg>
+                                            </button>
+                                            <button (click)="deleteProducto(producto.id)" class="p-2 text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 rounded-full hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
+                                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
+                                            </button>
+                                          </div>
+                                        </td>
+                                      </tr>
+                                    }
+                                  </tbody>
+                                </table>
+                              </div>
+                            } @else {
+                              <div class="text-center py-8 px-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
+                                <svg class="mx-auto h-12 w-12 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" /></svg>
+                                <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">Sin productos</h3>
+                                <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Agregue su primer producto para comenzar.</p>
                               </div>
                             }
-                            @case ('error') {
-                              <div class="p-4 rounded-lg bg-red-100 dark:bg-red-900/50 border border-red-300 dark:border-red-700">
-                                <h3 class="font-bold text-red-800 dark:text-red-200">Error al Cargar Google Maps</h3>
-                                <p class="text-sm text-red-700 dark:text-red-300 mt-1">
-                                  No se pudo autenticar con la API de Google Maps. Por favor, verifique los siguientes puntos:
-                                </p>
-                                <ul class="list-disc list-inside text-sm text-red-700 dark:text-red-300 mt-2 space-y-1">
-                                    <li>Que ha configurado una clave de API válida en <code>index.html</code>.</li>
-                                    <li>Que la facturación está habilitada para su proyecto de Google Cloud.</li>
-                                    <li>Que las APIs "Maps JavaScript API", "Places API" y "Geocoding API" están habilitadas.</li>
-                                    <li>Revise la consola del desarrollador (F12) para ver errores específicos.</li>
-                                </ul>
+                          }
+                          @case('stock') {
+                            @if(stockWithDetails().length > 0) {
+                               <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                                  <thead class="bg-slate-50 dark:bg-slate-700/50">
+                                    <tr>
+                                      <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Producto</th>
+                                      <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Ubicación</th>
+                                      <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Cantidad</th>
+                                      <th scope="col" class="relative px-6 py-3"><span class="sr-only">Acciones</span></th>
+                                    </tr>
+                                  </thead>
+                                  <tbody class="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
+                                    @for(item of stockWithDetails(); track item.product_id + '-' + item.sucursal_id) {
+                                      <tr>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-white">{{ item.productName }} <span class="text-slate-400">({{item.productSku}})</span></td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">{{ item.sucursalName }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">{{ item.cantidad }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                            <button (click)="startEditingStock(item)" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">Ajustar</button>
+                                        </td>
+                                      </tr>
+                                    }
+                                  </tbody>
+                                </table>
+                              </div>
+                            } @else {
+                               <div class="text-center py-8 px-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
+                                <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">Sin datos de stock</h3>
+                                <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Agregue productos y ubicaciones para ver el inventario.</p>
                               </div>
                             }
-                            @case ('ready') {
-                              <form [formGroup]="sucursalForm" (ngSubmit)="saveSucursal()" class="space-y-4">
-                                <div>
-                                  <label for="address-input" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Dirección (busque o seleccione en el mapa)</label>
-                                  <input #addressInput id="address-input" formControlName="direccion" placeholder="Comience a escribir una dirección..." class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 dark:placeholder:text-slate-400">
-                                </div>
-                                
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                  <div #mapContainer class="w-full h-64 md:h-full rounded-lg bg-slate-200 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 min-h-[200px]"></div>
-                                  <div class="space-y-4">
-                                    <div>
-                                      <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Nombre de Ubicación</label>
-                                      <input formControlName="nombre" placeholder="Ej: Bodega Central" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 dark:placeholder:text-slate-400">
-                                    </div>
-                                    <div>
-                                      <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Latitud</label>
-                                      <input type="number" formControlName="latitud" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 cursor-not-allowed">
-                                    </div>
-                                    <div>
-                                      <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Longitud</label>
-                                      <input type="number" formControlName="longitud" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 cursor-not-allowed">
-                                    </div>
-                                  </div>
-                                </div>
-          
-                                <div class="flex justify-end pt-2 gap-3">
-                                  <button type="button" (click)="cancelEditOrAdd()" class="px-4 py-2 text-sm font-medium rounded-md text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-600 hover:bg-slate-100 dark:hover:bg-slate-500 border border-slate-300 dark:border-slate-500 shadow-sm">
-                                    Cancelar
-                                  </button>
-                                  <button type="submit" [disabled]="sucursalForm.invalid || isSubmitting()" class="inline-flex justify-center py-2 px-6 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 dark:disabled:bg-blue-800 disabled:cursor-not-allowed">
-                                    {{ isSubmitting() ? 'Guardando...' : 'Guardar Ubicación' }}
-                                  </button>
-                                </div>
-                              </form>
-                            }
-                         }
-                      }
-                    </div>
-                  </section>
+                          }
+                        }
+                      </div>
+                    </section>
+                  }
+                </div>
+              </div>
+            } @else {
+              <div class="flex items-center justify-center h-full">
+                <div class="text-center">
+                  <h2 class="text-xl font-semibold">Cargando datos del negocio...</h2>
+                   <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto mt-4"></div>
                 </div>
               </div>
             }
@@ -251,150 +309,279 @@
         </div>
       }
 
-      <!-- VISTA: ADMINISTRACIÓN DE USUARIOS -->
       @case ('user_management') {
-         <div class="container mx-auto py-8 md:py-12 px-4 sm:px-6 lg:px-8">
-          <header class="mb-8 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-            <div>
-              <h1 class="text-3xl font-bold text-slate-800 dark:text-white">Gestión de Acceso (ACL)</h1>
-              <p class="text-slate-500 dark:text-slate-400 mt-1">Asigne o revoque el acceso de los usuarios a los negocios.</p>
+        <div class="container mx-auto py-8 md:py-12 px-4 sm:px-6 lg:px-8">
+            <header class="mb-8">
+              <h1 class="text-3xl font-bold text-slate-800 dark:text-white">Gestión de Acceso de Usuarios (ACL)</h1>
+              <p class="text-slate-500 dark:text-slate-400 mt-1">Asigne acceso a los negocios para cada usuario.</p>
+              <button (click)="navigateToLauncher()" class="mt-4 inline-flex items-center gap-2 px-4 py-2 border border-slate-300 dark:border-slate-600 text-sm font-medium rounded-lg shadow-sm text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" /></svg>
+                Volver al Launcher
+              </button>
+            </header>
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+                <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                  <thead class="bg-slate-50 dark:bg-slate-700/50">
+                    <tr>
+                      <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Usuario</th>
+                      <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Negocios Asignados</th>
+                      <th scope="col" class="relative px-6 py-3"><span class="sr-only">Editar</span></th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                    @for(user of usuariosParaAdmin(); track user.id) {
+                       <tr>
+                          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-white">{{ user.email }}</td>
+                          <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
+                            @if(user.empresas.length > 0) {
+                              <div class="flex flex-wrap gap-1">
+                                @for(empresa of user.empresas; track empresa.id) {
+                                  <span class="px-2 py-1 text-xs rounded-full bg-slate-100 dark:bg-slate-700">{{ empresa.nombre }}</span>
+                                }
+                              </div>
+                            } @else {
+                              <span>Sin acceso</span>
+                            }
+                          </td>
+                          <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <button (click)="openAccessEditor(user)" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">Editar Acceso</button>
+                          </td>
+                       </tr>
+                    }
+                  </tbody>
+                </table>
             </div>
-             <button (click)="navigateToLauncher()" class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 border border-slate-300 dark:border-slate-600 text-sm font-medium rounded-md text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700">
-              <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" /></svg>
-              Volver al Launcher
-            </button>
-          </header>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            @for(user of usuariosParaAdmin(); track user.id) {
-              <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 p-6 flex flex-col justify-between">
-                <div>
-                  <p class="font-bold text-lg text-slate-900 dark:text-white">{{ user.email }}</p>
-                  <p class="text-sm font-mono text-slate-500 dark:text-slate-400">{{ user.id }}</p>
-
-                  <div class="mt-4">
-                     <h3 class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Acceso a Negocios</h3>
-                      @if(user.empresas.length > 0) {
-                        <div class="flex flex-wrap gap-2">
-                          @for(empresa of user.empresas; track empresa.id) {
-                            <span class="px-2.5 py-1 text-xs rounded-full bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200">{{ empresa.nombre }}</span>
-                          }
-                        </div>
-                      } @else {
-                        <span class="text-xs text-slate-400 dark:text-slate-500 italic">Sin asignación</span>
-                      }
-                  </div>
-                </div>
-
-                <div class="mt-6 border-t border-slate-200 dark:border-slate-700 pt-4">
-                  <button (click)="openAccessEditor(user)" class="w-full text-center text-sm font-semibold text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors">
-                    Gestionar Acceso...
-                  </button>
-                </div>
-              </div>
-            }
-          </div>
         </div>
       }
     }
   }
 
-  <!-- Modal de Edición de Acceso -->
-  @if (editingUser(); as user) {
-    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" (click)="closeAccessEditor()">
-      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-md" (click)="$event.stopPropagation()">
-        <div class="p-6 sm:p-8 border-b border-slate-200 dark:border-slate-700">
-          <h2 class="text-xl font-bold text-slate-900 dark:text-white">Gestionar Acceso</h2>
-          <p class="text-slate-600 dark:text-slate-400 mt-1">Editando permisos para <span class="font-semibold">{{ user.email }}</span></p>
+  <!-- MODALS -->
+  @if(isCreatingBusiness()) {
+    <div class="fixed inset-0 bg-slate-900/80 z-50 flex items-center justify-center p-4" (click)="closeCreateBusinessModal()">
+      <div class="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-md" (click)="$event.stopPropagation()">
+        <div class="p-6 border-b border-slate-200 dark:border-slate-700">
+          <h3 class="text-lg font-medium leading-6 text-slate-900 dark:text-white">Crear Nuevo Negocio</h3>
         </div>
-        
-        <div class="p-6 sm:p-8 space-y-4 max-h-64 overflow-y-auto">
-          @for (empresa of empresas(); track empresa.id) {
-            <label class="flex items-center justify-between p-3 rounded-lg bg-slate-100 dark:bg-slate-700/50 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer">
-              <span class="font-medium text-slate-800 dark:text-slate-200">{{ empresa.nombre }}</span>
-              <input type="checkbox"
-                [checked]="editedUserAccess().get(empresa.id)"
-                (change)="updateEditedAccess(empresa.id, $event)"
-                class="h-5 w-5 rounded border-slate-400 dark:border-slate-500 text-blue-600 focus:ring-blue-500 bg-transparent dark:bg-transparent dark:focus:ring-offset-slate-800">
-            </label>
-          }
-        </div>
-
-        <div class="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-b-xl flex justify-end space-x-3">
-          <button (click)="closeAccessEditor()" class="px-4 py-2 text-sm font-medium rounded-md text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-600 hover:bg-slate-100 dark:hover:bg-slate-500 border border-slate-300 dark:border-slate-500 shadow-sm">
-            Cancelar
-          </button>
-          <button (click)="saveUserAccess()" [disabled]="isSubmitting()" class="px-4 py-2 text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 dark:disabled:bg-blue-800 shadow-sm disabled:cursor-not-allowed">
-            {{ isSubmitting() ? 'Guardando...' : 'Guardar Cambios' }}
-          </button>
-        </div>
-      </div>
-    </div>
-  }
-
-  <!-- Modal de Creación de Negocio -->
-  @if (isCreatingBusiness()) {
-    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" (click)="closeCreateBusinessModal()">
-      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-md" (click)="$event.stopPropagation()">
         <form [formGroup]="empresaForm" (ngSubmit)="crearEmpresa()">
-            <div class="p-6 sm:p-8">
-              <h2 class="text-xl font-bold text-slate-900 dark:text-white">Establecer Nuevo Negocio</h2>
-              <p class="text-slate-600 dark:text-slate-400 mt-1 mb-6">Ingrese el nombre para el nuevo grupo empresarial.</p>
-              
-              <div>
-                <label for="business-name" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Nombre del Negocio</label>
-                <input id="business-name" formControlName="nombre" placeholder="Ej. 'SIAC Textiles'" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700">
-              </div>
-            </div>
-
-            <div class="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-b-xl flex justify-end space-x-3">
-              <button type="button" (click)="closeCreateBusinessModal()" class="px-4 py-2 text-sm font-medium rounded-md text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-600 hover:bg-slate-100 dark:hover:bg-slate-500 border border-slate-300 dark:border-slate-500 shadow-sm">
-                Cancelar
-              </button>
-              <button type="submit" [disabled]="empresaForm.invalid || isSubmitting()" class="px-4 py-2 text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 dark:disabled:bg-blue-800 shadow-sm disabled:cursor-not-allowed">
-                {{ isSubmitting() ? 'Creando...' : 'Crear Negocio' }}
-              </button>
-            </div>
+          <div class="p-6">
+            <label for="empresa-nombre" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Nombre del Negocio</label>
+            <input id="empresa-nombre" formControlName="nombre" type="text" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm bg-white dark:bg-slate-700">
+          </div>
+          <div class="bg-slate-50 dark:bg-slate-800/50 px-6 py-3 flex justify-end gap-3 rounded-b-lg">
+            <button type="button" (click)="closeCreateBusinessModal()" class="px-4 py-2 text-sm font-medium rounded-md text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-600 hover:bg-slate-100 dark:hover:bg-slate-500 border border-slate-300 dark:border-slate-500">Cancelar</button>
+            <button type="submit" [disabled]="empresaForm.invalid || isSubmitting()" class="inline-flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50">
+              {{ isSubmitting() ? 'Creando...' : 'Crear Negocio' }}
+            </button>
+          </div>
         </form>
       </div>
     </div>
   }
 
-  <!-- Modal de Edición de Negocio -->
-  @if (isEditingBusiness()) {
-    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" (click)="closeEditBusinessModal()">
-      <div class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-md" (click)="$event.stopPropagation()">
+  @if(isEditingBusiness() && activeCompany(); as company) {
+    <div class="fixed inset-0 bg-slate-900/80 z-50 flex items-center justify-center p-4" (click)="closeEditBusinessModal()">
+      <div class="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-lg" (click)="$event.stopPropagation()">
+         <div class="p-6 border-b border-slate-200 dark:border-slate-700">
+            <h3 class="text-lg font-medium leading-6 text-slate-900 dark:text-white">Editar Detalles de {{company.nombre}}</h3>
+        </div>
         <form [formGroup]="editEmpresaForm" (ngSubmit)="saveBusinessChanges()">
-            <div class="p-6 sm:p-8">
-              <h2 class="text-xl font-bold text-slate-900 dark:text-white">Editar Detalles del Negocio</h2>
-              <p class="text-slate-600 dark:text-slate-400 mt-1 mb-6">Actualice la información de su empresa.</p>
-              
-              <div class="space-y-4">
+            <div class="p-6 space-y-6">
                 <div>
-                  <label for="edit-business-name" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Nombre del Negocio</label>
-                  <input id="edit-business-name" formControlName="nombre" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700">
+                  <label for="edit-empresa-nombre" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Nombre del Negocio</label>
+                  <input id="edit-empresa-nombre" formControlName="nombre" type="text" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm bg-white dark:bg-slate-700">
                 </div>
                 <div>
-                  <label for="edit-logo-url" class="block text-sm font-medium text-slate-700 dark:text-slate-300">URL del Logo Principal</label>
-                  <input id="edit-logo-url" formControlName="logo_url" placeholder="https://..." class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700">
+                  <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Logo</label>
+                  <div class="mt-2">
+                    <button type="button" (click)="openLogoPicker()" class="relative group">
+                      <img [src]="editEmpresaForm.get('logo_url')?.value || activeCompanyLogo()" alt="Logo actual" class="h-24 w-auto rounded-lg bg-slate-100 dark:bg-slate-700 p-2 border border-slate-300 dark:border-slate-600">
+                      <div class="absolute inset-0 bg-black/50 flex items-center justify-center rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-white"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 19.5a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" /><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 7.125L18 8.625" /></svg>
+                      </div>
+                    </button>
+                  </div>
                 </div>
-                <div>
-                  <label for="edit-icon-url" class="block text-sm font-medium text-slate-700 dark:text-slate-300">URL del Ícono</label>
-                  <input id="edit-icon-url" formControlName="logo_icon_url" placeholder="https://..." class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700">
-                </div>
-              </div>
             </div>
-
-            <div class="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-b-xl flex justify-end space-x-3">
-              <button type="button" (click)="closeEditBusinessModal()" class="px-4 py-2 text-sm font-medium rounded-md text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-600 hover:bg-slate-100 dark:hover:bg-slate-500 border border-slate-300 dark:border-slate-500 shadow-sm">
-                Cancelar
-              </button>
-              <button type="submit" [disabled]="editEmpresaForm.invalid || isSubmitting()" class="px-4 py-2 text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 dark:disabled:bg-blue-800 shadow-sm disabled:cursor-not-allowed">
+            <div class="bg-slate-50 dark:bg-slate-800/50 px-6 py-3 flex justify-end gap-3 rounded-b-lg">
+              <button type="button" (click)="closeEditBusinessModal()" class="px-4 py-2 text-sm font-medium rounded-md text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-600 hover:bg-slate-100 dark:hover:bg-slate-500 border border-slate-300 dark:border-slate-500">Cancelar</button>
+              <button type="submit" [disabled]="editEmpresaForm.invalid || isSubmitting()" class="inline-flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50">
                 {{ isSubmitting() ? 'Guardando...' : 'Guardar Cambios' }}
               </button>
+          </div>
+        </form>
+      </div>
+      @if (isLogoPickerOpen()) {
+        <div class="absolute inset-0 bg-white dark:bg-slate-900 z-50 p-4 sm:p-6 lg:p-8" (click)="$event.stopPropagation()">
+          <div class="flex justify-between items-center mb-6">
+            <h4 class="text-xl font-bold">Seleccionar Logo</h4>
+            <button (click)="closeLogoPicker()" class="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-h-[70vh] overflow-y-auto p-1">
+            @for(logoUrl of availableLogos(); track logoUrl) {
+              <button (click)="selectLogo(logoUrl)" class="p-2 border-2 rounded-lg hover:border-blue-500 hover:shadow-lg transition-all" [class.border-blue-500]="editEmpresaForm.get('logo_url')?.value === logoUrl" [class.border-transparent]="editEmpresaForm.get('logo_url')?.value !== logoUrl">
+                <img [src]="logoUrl" class="w-full h-auto object-contain rounded-md">
+              </button>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  @if(editingUser(); as user) {
+    <div class="fixed inset-0 bg-slate-900/80 z-50 flex items-center justify-center p-4" (click)="closeAccessEditor()">
+      <div class="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-lg" (click)="$event.stopPropagation()">
+        <div class="p-6 border-b border-slate-200 dark:border-slate-700">
+          <h3 class="text-lg font-medium leading-6 text-slate-900 dark:text-white">Editar Acceso para {{user.email}}</h3>
+        </div>
+        <div class="p-6 max-h-[60vh] overflow-y-auto">
+          <fieldset class="space-y-4">
+            @for(empresa of empresas(); track empresa.id) {
+              <div class="relative flex items-start">
+                <div class="flex h-6 items-center">
+                   <input [id]="'access-' + empresa.id" type="checkbox" [checked]="editedUserAccess().get(empresa.id)" (change)="updateEditedAccess(empresa.id, $event)" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-600">
+                </div>
+                <div class="ml-3 text-sm leading-6">
+                  <label [for]="'access-' + empresa.id" class="font-medium text-slate-900 dark:text-white">{{empresa.nombre}}</label>
+                </div>
+              </div>
+            }
+          </fieldset>
+        </div>
+        <div class="bg-slate-50 dark:bg-slate-800/50 px-6 py-3 flex justify-end gap-3 rounded-b-lg">
+          <button type="button" (click)="closeAccessEditor()" class="px-4 py-2 text-sm font-medium rounded-md text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-600 hover:bg-slate-100 dark:hover:bg-slate-500 border border-slate-300 dark:border-slate-500">Cancelar</button>
+          <button (click)="saveUserAccess()" [disabled]="isSubmitting()" class="inline-flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50">
+            {{ isSubmitting() ? 'Guardando...' : 'Guardar Acceso' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if(isModuleInstallerOpen() && installingForCompany(); as company) {
+     <div class="fixed inset-0 bg-slate-900/80 z-50 flex items-center justify-center p-4" (click)="closeModuleInstaller()">
+      <div class="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-4xl" (click)="$event.stopPropagation()">
+        <div class="p-6 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+          <h3 class="text-lg font-medium leading-6 text-slate-900 dark:text-white">Instalar Aplicaciones para {{company.nombre}}</h3>
+           <button (click)="closeModuleInstaller()" class="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
+        <div class="p-6 max-h-[70vh] overflow-y-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          @for(category of availableModulesByCategory(); track category[0]) {
+            <div class="space-y-4">
+              <h4 class="font-bold uppercase tracking-wider text-sm" [class]="moduleCategoryColors[category[0]] || 'text-slate-500'">{{category[0]}}</h4>
+              <ul class="space-y-2">
+                @for(mod of category[1]; track mod.name) {
+                  <li class="flex items-center justify-between">
+                    <span class="text-sm text-slate-700 dark:text-slate-300">{{mod.name}}</span>
+                    @if(isModuleInstalled(mod.name)) {
+                      <button disabled class="px-3 py-1 text-xs font-medium rounded-full bg-slate-200 text-slate-600 dark:bg-slate-600 dark:text-slate-300 cursor-not-allowed">Instalado</button>
+                    } @else {
+                      <button (click)="installModule(mod.name)" [disabled]="isInstallingModule() === mod.name" class="px-3 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800 hover:bg-blue-200 dark:bg-blue-900/50 dark:text-blue-200 dark:hover:bg-blue-900/80 disabled:opacity-50">
+                        {{ isInstallingModule() === mod.name ? '...' : 'Instalar' }}
+                      </button>
+                    }
+                  </li>
+                }
+              </ul>
             </div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (productoModalState() !== 'closed') {
+    <div class="fixed inset-0 bg-slate-900/80 z-50 flex items-center justify-center p-4" (click)="closeProductoModal()">
+      <div class="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-2xl" (click)="$event.stopPropagation()">
+        <div class="p-6 border-b border-slate-200 dark:border-slate-700">
+          <h3 class="text-lg font-medium leading-6 text-slate-900 dark:text-white">{{ productoModalState() === 'edit' ? 'Editar Producto' : 'Nuevo Producto' }}</h3>
+        </div>
+        <form [formGroup]="productoForm" (ngSubmit)="saveProducto()">
+          <div class="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Nombre</label>
+                <input formControlName="nombre" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm bg-white dark:bg-slate-700">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">SKU</label>
+                <input formControlName="sku" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm bg-white dark:bg-slate-700">
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Descripción</label>
+              <textarea formControlName="descripcion" rows="3" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm bg-white dark:bg-slate-700"></textarea>
+            </div>
+            <div>
+              <h4 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Campos Personalizados</h4>
+              <div formArrayName="custom_fields" class="space-y-2">
+                @for (group of customFields.controls; track $index) {
+                  <div [formGroupName]="$index" class="flex items-center gap-2">
+                    <input formControlName="key" placeholder="Atributo (Ej: Color)" class="flex-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm bg-white dark:bg-slate-700 text-sm">
+                    <input formControlName="value" placeholder="Valor (Ej: Rojo)" class="flex-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm bg-white dark:bg-slate-700 text-sm">
+                    <button type="button" (click)="removeCustomField($index)" class="p-2 text-red-500 rounded-full hover:bg-red-100 dark:hover:bg-red-900/50">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                  </div>
+                }
+              </div>
+               <button type="button" (click)="addCustomField()" class="mt-2 text-sm text-blue-600 dark:text-blue-400 hover:underline">+ Agregar atributo</button>
+            </div>
+          </div>
+          <div class="bg-slate-50 dark:bg-slate-800/50 px-6 py-3 flex justify-end gap-3 rounded-b-lg">
+            <button type="button" (click)="closeProductoModal()" class="px-4 py-2 text-sm font-medium rounded-md text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-600 hover:bg-slate-100 dark:hover:bg-slate-500 border border-slate-300 dark:border-slate-500">Cancelar</button>
+            <button type="submit" [disabled]="productoForm.invalid || isSubmitting()" class="inline-flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50">
+              {{ isSubmitting() ? 'Guardando...' : 'Guardar' }}
+            </button>
+          </div>
         </form>
       </div>
     </div>
   }
+  
+  @if(isImportModalOpen()) {
+    <div class="fixed inset-0 bg-slate-900/80 z-50 flex items-center justify-center p-4" (click)="closeImportModal()">
+      <div class="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-lg" (click)="$event.stopPropagation()">
+        <div class="p-6 border-b border-slate-200 dark:border-slate-700">
+          <h3 class="text-lg font-medium leading-6 text-slate-900 dark:text-white">Importar Productos desde CSV</h3>
+        </div>
+        <div class="p-6">
+          <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">Seleccione un archivo CSV. La primera fila debe ser el encabezado. Columnas requeridas: <strong>nombre, sku</strong>. Columnas opcionales: <strong>descripcion</strong>. Cualquier otra columna se importará como un campo personalizado.</p>
+          <input #csvImportInput type="file" (change)="importProductosDesdeCSV($event)" accept=".csv" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"/>
+        </div>
+        <div class="bg-slate-50 dark:bg-slate-800/50 px-6 py-3 flex justify-end gap-3 rounded-b-lg">
+          <button type="button" (click)="closeImportModal()" class="px-4 py-2 text-sm font-medium rounded-md text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-600 hover:bg-slate-100 dark:hover:bg-slate-500 border border-slate-300 dark:border-slate-500">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  }
+  
+  @if(editingStock(); as stockItem) {
+    <div class="fixed inset-0 bg-slate-900/80 z-50 flex items-center justify-center p-4" (click)="closeStockModal()">
+      <div class="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-md" (click)="$event.stopPropagation()">
+        <div class="p-6 border-b border-slate-200 dark:border-slate-700">
+          <h3 class="text-lg font-medium leading-6 text-slate-900 dark:text-white">Ajustar Stock</h3>
+          <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{stockItem.productName}} en {{stockItem.sucursalName}}</p>
+        </div>
+        <form [formGroup]="stockForm" (ngSubmit)="saveStock()">
+          <div class="p-6">
+            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Nueva Cantidad</label>
+            <input type="number" formControlName="cantidad" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm bg-white dark:bg-slate-700">
+          </div>
+          <div class="bg-slate-50 dark:bg-slate-800/50 px-6 py-3 flex justify-end gap-3 rounded-b-lg">
+            <button type="button" (click)="closeStockModal()" class="px-4 py-2 text-sm font-medium rounded-md text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-600 hover:bg-slate-100 dark:hover:bg-slate-500 border border-slate-300 dark:border-slate-500">Cancelar</button>
+            <button type="submit" [disabled]="stockForm.invalid || isSubmitting()" class="inline-flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50">
+              {{ isSubmitting() ? 'Actualizando...' : 'Actualizar Stock' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
 </div>

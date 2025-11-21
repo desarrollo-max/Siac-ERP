@@ -1,9 +1,8 @@
-import { Component, OnInit, ChangeDetectionStrategy, signal, effect, computed, ChangeDetectorRef, inject, ViewChild, ElementRef, OnDestroy } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy, signal, effect, computed, ChangeDetectorRef, inject, OnDestroy, ViewChild, ElementRef, Injector, afterNextRender } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormGroup, Validators, FormControl } from '@angular/forms';
+import { ReactiveFormsModule, FormGroup, Validators, FormControl, FormArray } from '@angular/forms';
 import { SupabaseService } from './services/supabase.service';
-import { Empresa, Sucursal, Modulo, UsuarioParaAdmin } from './models/siac.models';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { Empresa, Sucursal, Modulo, UsuarioParaAdmin, AvailableModule, Producto, StockInventario } from './models/siac.models';
 
 declare var google: any;
 
@@ -17,10 +16,12 @@ type LocationModuleState = 'view' | 'add' | 'edit';
   imports: [CommonModule, ReactiveFormsModule],
 })
 export class AppComponent implements OnInit, OnDestroy {
+  @ViewChild('addressInput') addressInput: ElementRef<HTMLInputElement>;
+  @ViewChild('csvImportInput') csvImportInput: ElementRef<HTMLInputElement>;
+
   private supabase = inject(SupabaseService);
   private cdr = inject(ChangeDetectorRef);
-  // FIX: Moved injection to constructor to resolve potential type inference issue with field initializers.
-  private sanitizer: DomSanitizer;
+  private injector = inject(Injector);
 
   // --- View State ---
   activeView = signal<AppView>('launcher');
@@ -29,24 +30,21 @@ export class AppComponent implements OnInit, OnDestroy {
   empresas = signal<Empresa[]>([]);
   modulos = signal<Modulo[]>([]);
   usuariosParaAdmin = signal<UsuarioParaAdmin[]>([]);
-  
   activeCompanyId = signal<string | null>(null);
-  sucursales = signal<Sucursal[]>([]);
   
   // --- UI State Signals ---
   isLoading = signal<boolean>(true);
   isSubmitting = signal<boolean>(false);
+  isSidebarCollapsed = signal<boolean>(false);
   
   // --- Computed Signals ---
   activeCompany = computed(() => this.empresas().find(e => e.id === this.activeCompanyId()));
   activeCompanyLogo = computed(() => this.activeCompany()?.logo_url || 'https://bupapjirkilnfoswgtsg.supabase.co/storage/v1/object/public/assets/logo.png');
   activeCompanyIcon = computed(() => this.activeCompany()?.logo_icon_url || 'https://bupapjirkilnfoswgtsg.supabase.co/storage/v1/object/public/assets/icono.png');
-  
-  // --- Forms ---
-  sucursalForm: FormGroup;
-  empresaForm: FormGroup;
-  editEmpresaForm: FormGroup;
 
+  isLocationsModuleInstalled = computed(() => this.modulos().some(m => m.company_id === this.activeCompanyId() && m.nombre === 'Ubicaciones Físicas'));
+  isInventoryModuleInstalled = computed(() => this.modulos().some(m => m.company_id === this.activeCompanyId() && m.nombre === 'Inventario'));
+  
   // --- ACL Editing State ---
   editingUser = signal<UsuarioParaAdmin | null>(null);
   editedUserAccess = signal<Map<string, boolean>>(new Map());
@@ -54,48 +52,85 @@ export class AppComponent implements OnInit, OnDestroy {
   // --- Business Creation/Editing State ---
   isCreatingBusiness = signal<boolean>(false);
   isEditingBusiness = signal<boolean>(false);
+  isLogoPickerOpen = signal<boolean>(false);
+  editEmpresaForm: FormGroup;
+  empresaForm: FormGroup;
+  availableLogos = signal<string[]>([
+    "https://bupapjirkilnfoswgtsg.supabase.co/storage/v1/object/public/assets/logos/logo-1.png",
+    "https://bupapjirkilnfoswgtsg.supabase.co/storage/v1/object/public/assets/logos/logo-2.png",
+    "https://bupapjirkilnfoswgtsg.supabase.co/storage/v1/object/public/assets/logos/logo-3.png",
+    "https://bupapjirkilnfoswgtsg.supabase.co/storage/v1/object/public/assets/logos/logo-4.png",
+    "https://bupapjirkilnfoswgtsg.supabase.co/storage/v1/object/public/assets/logos/logo-5.png",
+    "https://bupapjirkilnfoswgtsg.supabase.co/storage/v1/object/public/assets/logos/logo-6.png",
+    "https://bupapjirkilnfoswgtsg.supabase.co/storage/v1/object/public/assets/logos/logo-7.png",
+    "https://bupapjirkilnfoswgtsg.supabase.co/storage/v1/object/public/assets/logos/logo-8.png",
+  ]);
 
   // --- Location Module State ---
+  sucursales = signal<Sucursal[]>([]);
   locationModuleState = signal<LocationModuleState>('view');
   editingSucursal = signal<Sucursal | null>(null);
-
-  // --- Google Maps State ---
-  @ViewChild('addressInput') addressInput: ElementRef<HTMLInputElement>;
-  @ViewChild('mapContainer') mapContainer: ElementRef<HTMLDivElement>;
-  private map: any;
-  private marker: any;
-  private geocoder: any;
+  sucursalForm: FormGroup;
   mapsApiStatus = signal<'loading' | 'ready' | 'error'>('loading');
-  
-  // --- Address Selection Iframe ---
-  addressSelectionUrl: SafeResourceUrl;
+  private autocomplete: any = null;
+
+  // --- Inventory Module State ---
+  productos = signal<Producto[]>([]);
+  stock = signal<StockInventario[]>([]);
+  activeInventoryTab = signal<'products' | 'stock'>('products');
+  productoModalState = signal<'closed' | 'add' | 'edit'>('closed');
+  editingProducto = signal<Producto | null>(null);
+  productoForm: FormGroup;
+  isImportModalOpen = signal(false);
+  editingStock = signal<StockInventario & { productName: string; sucursalName: string } | null>(null);
+  stockForm: FormGroup;
+
+  // --- Module Installer State ---
+  isModuleInstallerOpen = signal(false);
+  installingForCompany = signal<Empresa | null>(null);
+  availableModules = signal<AvailableModule[]>([]);
+  isInstallingModule = signal<string | null>(null);
+  moduleCategoryColors: { [key: string]: string } = {
+    'FINANZAS': 'text-teal-600 dark:text-teal-400',
+    'VENTAS': 'text-red-600 dark:text-red-400',
+    'SITIOS WEB': 'text-sky-600 dark:text-sky-400',
+    'CADENA DE SUMINISTRO': 'text-purple-600 dark:text-purple-400',
+    'RECURSOS HUMANOS': 'text-indigo-600 dark:text-indigo-400',
+    'MARKETING': 'text-orange-600 dark:text-orange-400',
+    'SERVICIOS': 'text-amber-600 dark:text-amber-400',
+    'PRODUCTIVIDAD': 'text-rose-600 dark:text-rose-400',
+  };
+
+  availableModulesByCategory = computed(() => {
+    const grouped: { [key: string]: AvailableModule[] } = {};
+    for (const mod of this.availableModules()) {
+        if (!grouped[mod.category]) {
+            grouped[mod.category] = [];
+        }
+        grouped[mod.category].push(mod);
+    }
+    return Object.entries(grouped);
+  });
+
+  stockWithDetails = computed(() => {
+    const prods = this.productos();
+    const sucs = this.sucursales();
+    return this.stock().map(s => {
+      const product = prods.find(p => p.id === s.product_id);
+      const sucursal = sucs.find(suc => suc.id === s.sucursal_id);
+      return {
+        ...s,
+        productName: product?.nombre || 'Producto no encontrado',
+        productSku: product?.sku || 'N/A',
+        sucursalName: sucursal?.nombre || 'Ubicación no encontrada'
+      }
+    });
+  });
+
 
   constructor() {
-    this.sanitizer = inject(DomSanitizer);
-    this.addressSelectionUrl = this.sanitizer.bypassSecurityTrustResourceUrl('https://storage.googleapis.com/maps-solutions-zpjoyswxad/address-selection/124m/address-selection.html');
-    
-    this.sucursalForm = new FormGroup({
-      id: new FormControl(null),
-      nombre: new FormControl('', Validators.required),
-      direccion: new FormControl('', Validators.required),
-      latitud: new FormControl({ value: 0, disabled: true }, Validators.required),
-      longitud: new FormControl({ value: 0, disabled: true }, Validators.required),
-    });
-    
-    this.empresaForm = new FormGroup({
-      nombre: new FormControl('', Validators.required),
-    });
-
-    this.editEmpresaForm = new FormGroup({
-      nombre: new FormControl('', Validators.required),
-      logo_url: new FormControl(''),
-      logo_icon_url: new FormControl('')
-    });
-
-    // Handle Google Maps API authentication errors
-    (window as any).gm_authFailure = () => {
-      this.mapsApiStatus.set('error');
-    };
+    this.buildForms();
+    window.addEventListener('google-maps-auth-error', this.handleMapsAuthError);
 
     effect(() => {
       const companyId = this.activeCompanyId();
@@ -105,35 +140,99 @@ export class AppComponent implements OnInit, OnDestroy {
     });
 
     effect(() => {
-        const state = this.locationModuleState();
-        if (state === 'edit' && this.activeView() === 'business_dashboard') {
-            this.mapsApiStatus.set('loading');
-            setTimeout(() => this.initEditMap(), 100);
-        }
+      const state = this.locationModuleState();
+      if ((state === 'add' || state === 'edit') && this.isLocationsModuleInstalled()) {
+        afterNextRender(() => this.initAutocomplete(), { injector: this.injector });
+      } else {
+        this.destroyAutocomplete();
+      }
+    });
+  }
+
+  private buildForms(): void {
+    this.sucursalForm = new FormGroup({
+      id: new FormControl(null),
+      nombre: new FormControl('', Validators.required),
+      direccion: new FormControl('', Validators.required),
+      latitud: new FormControl({ value: 0, disabled: true }, [Validators.required, Validators.min(-90), Validators.max(90)]),
+      longitud: new FormControl({ value: 0, disabled: true }, [Validators.required, Validators.min(-180), Validators.max(180)]),
+    });
+    
+    this.empresaForm = new FormGroup({
+      nombre: new FormControl('', Validators.required),
+    });
+
+    this.editEmpresaForm = new FormGroup({
+      nombre: new FormControl('', Validators.required),
+      logo_url: new FormControl(''),
+    });
+
+    this.productoForm = new FormGroup({
+      id: new FormControl(null),
+      nombre: new FormControl('', Validators.required),
+      sku: new FormControl('', Validators.required),
+      descripcion: new FormControl(''),
+      custom_fields: new FormArray([])
+    });
+
+    this.stockForm = new FormGroup({
+        cantidad: new FormControl(0, [Validators.required, Validators.min(0)])
     });
   }
 
   ngOnInit(): void {
     this.initializeApp();
-    window.addEventListener('message', this.handleAddressSelectionMessage.bind(this));
   }
   
   ngOnDestroy(): void {
-    window.removeEventListener('message', this.handleAddressSelectionMessage.bind(this));
+    window.removeEventListener('google-maps-auth-error', this.handleMapsAuthError);
+    this.destroyAutocomplete();
+  }
+
+  private handleMapsAuthError = () => this.mapsApiStatus.set('error');
+
+  private initAutocomplete(): void {
+    if (this.mapsApiStatus() === 'error' || !this.addressInput?.nativeElement || this.autocomplete) return;
+    if (typeof google === 'undefined' || !google.maps?.places) {
+      this.mapsApiStatus.set('loading');
+      setTimeout(() => this.initAutocomplete(), 200);
+      return;
+    }
+    this.mapsApiStatus.set('ready');
+    this.autocomplete = new google.maps.places.Autocomplete(this.addressInput.nativeElement, {
+      types: ['address'],
+      fields: ['formatted_address', 'geometry.location']
+    });
+    this.autocomplete.addListener('place_changed', () => {
+      const place = this.autocomplete.getPlace();
+      if (place.geometry?.location) {
+        this.sucursalForm.patchValue({
+          direccion: this.addressInput.nativeElement.value,
+          latitud: place.geometry.location.lat(),
+          longitud: place.geometry.location.lng(),
+        });
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  private destroyAutocomplete(): void {
+    if (this.autocomplete) {
+      google.maps.event.clearInstanceListeners(this.autocomplete);
+      document.querySelectorAll('.pac-container').forEach(c => c.remove());
+      this.autocomplete = null;
+    }
   }
 
   private initializeApp(): void {
     this.isLoading.set(true);
     this.supabase.auth.getUser().subscribe(() => {
-      this.supabase.getEmpresasUsuario().subscribe(empresas => {
-        this.empresas.set(empresas);
+      this.supabase.getEmpresasUsuario().subscribe(empresas => this.empresas.set(empresas));
+      this.supabase.getModulos().subscribe(modulos => this.modulos.set(modulos));
+      this.supabase.getTodosLosUsuariosConEmpresas().subscribe(usuarios => this.usuariosParaAdmin.set(usuarios));
+      this.supabase.getAvailableModules().subscribe(modules => {
+        this.availableModules.set(modules);
         this.isLoading.set(false);
-      });
-      this.supabase.getModulos().subscribe(modulos => {
-        this.modulos.set(modulos);
-      });
-      this.supabase.getTodosLosUsuariosConEmpresas().subscribe(usuarios => {
-        this.usuariosParaAdmin.set(usuarios);
       });
     });
   }
@@ -141,10 +240,13 @@ export class AppComponent implements OnInit, OnDestroy {
   private loadCompanyData(companyId: string): void {
     this.isLoading.set(true);
     this.sucursales.set([]);
-
-    this.supabase.getSucursales(companyId).subscribe(data => {
-      this.sucursales.set(data)
-      this.isLoading.set(false);
+    this.productos.set([]);
+    this.stock.set([]);
+    this.supabase.getSucursales(companyId).subscribe(data => this.sucursales.set(data));
+    this.supabase.getProductos(companyId).subscribe(data => this.productos.set(data));
+    this.supabase.getStockPorCompania(companyId).subscribe(data => {
+        this.stock.set(data);
+        this.isLoading.set(false);
     });
   }
 
@@ -152,7 +254,6 @@ export class AppComponent implements OnInit, OnDestroy {
     return this.modulos().filter(m => m.company_id === companyId);
   }
   
-  // --- Navigation Handlers ---
   navigateToBusiness(companyId: string): void {
     this.activeCompanyId.set(companyId);
     this.activeView.set('business_dashboard');
@@ -168,9 +269,9 @@ export class AppComponent implements OnInit, OnDestroy {
     this.activeView.set('user_management');
   }
 
-  // --- Location Module CRUD Handlers ---
+  // --- Location Module CRUD ---
   startAddingSucursal(): void {
-    this.sucursalForm.reset({ latitud: 0, longitud: 0, direccion: '' });
+    this.sucursalForm.reset({ nombre: '', direccion: '', latitud: 0, longitud: 0 });
     this.editingSucursal.set(null);
     this.locationModuleState.set('add');
   }
@@ -189,22 +290,16 @@ export class AppComponent implements OnInit, OnDestroy {
   saveSucursal(): void {
     if (this.sucursalForm.invalid || !this.activeCompanyId()) return;
     this.isSubmitting.set(true);
-
-    const formValue = this.sucursalForm.getRawValue(); // getRawValue to include disabled fields
-    const sucursalData = {
-      ...formValue,
-      company_id: this.activeCompanyId()!,
-    };
-    
-    if (this.editingSucursal()) { // It's an update
-        this.supabase.updateSucursal(sucursalData).subscribe(updatedSucursal => {
-            this.sucursales.update(list => list.map(s => s.id === updatedSucursal.id ? updatedSucursal : s));
+    const sucursalData = { ...this.sucursalForm.getRawValue(), company_id: this.activeCompanyId()! };
+    if (this.editingSucursal()) {
+        this.supabase.updateSucursal(sucursalData).subscribe(updated => {
+            this.sucursales.update(list => list.map(s => s.id === updated.id ? updated : s));
             this.isSubmitting.set(false);
             this.cancelEditOrAdd();
         });
-    } else { // It's a new one
-        const { id, ...newSucursalData } = sucursalData;
-        this.supabase.addSucursal(newSucursalData).subscribe(sucursal => {
+    } else {
+        const { id, ...newData } = sucursalData;
+        this.supabase.addSucursal(newData).subscribe(sucursal => {
             this.sucursales.update(list => [...list, sucursal]);
             this.isSubmitting.set(false);
             this.cancelEditOrAdd();
@@ -213,7 +308,7 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   eliminarSucursal(sucursalId: number): void {
-    if (confirm('¿Está seguro de que desea eliminar esta ubicación?')) {
+    if (confirm('¿Está seguro?')) {
         this.supabase.deleteSucursal(sucursalId).subscribe(() => {
             this.sucursales.update(list => list.filter(s => s.id !== sucursalId));
         });
@@ -225,33 +320,22 @@ export class AppComponent implements OnInit, OnDestroy {
     this.editingUser.set(user);
     const accessMap = new Map<string, boolean>();
     const userCompanyIds = new Set(user.empresas.map(e => e.id));
-    for (const empresa of this.empresas()) {
-      accessMap.set(empresa.id, userCompanyIds.has(empresa.id));
-    }
+    this.empresas().forEach(e => accessMap.set(e.id, userCompanyIds.has(e.id)));
     this.editedUserAccess.set(accessMap);
   }
 
-  closeAccessEditor(): void {
-    this.editingUser.set(null);
-  }
+  closeAccessEditor(): void { this.editingUser.set(null); }
 
   updateEditedAccess(companyId: string, event: Event): void {
     const isChecked = (event.target as HTMLInputElement).checked;
-    this.editedUserAccess.update(map => {
-      map.set(companyId, isChecked);
-      return new Map(map);
-    });
+    this.editedUserAccess.update(map => new Map(map.set(companyId, isChecked)));
   }
 
   saveUserAccess(): void {
     const user = this.editingUser();
     if (!user) return;
-
     this.isSubmitting.set(true);
-    const selectedCompanyIds = Array.from(this.editedUserAccess().entries())
-      .filter(([, isSelected]) => isSelected)
-      .map(([companyId]) => companyId);
-    
+    const selectedCompanyIds = Array.from(this.editedUserAccess().entries()).filter(([, v]) => v).map(([k]) => k);
     this.supabase.updateUserCompanyAccess(user.id, selectedCompanyIds).subscribe(() => {
       this.supabase.getTodosLosUsuariosConEmpresas().subscribe(usuarios => {
           this.usuariosParaAdmin.set(usuarios);
@@ -261,15 +345,12 @@ export class AppComponent implements OnInit, OnDestroy {
     });
   }
 
-  // --- Business Creation/Editing Handlers ---
+  // --- Business Creation/Editing ---
   openCreateBusinessModal(): void {
     this.empresaForm.reset();
     this.isCreatingBusiness.set(true);
   }
-
-  closeCreateBusinessModal(): void {
-    this.isCreatingBusiness.set(false);
-  }
+  closeCreateBusinessModal(): void { this.isCreatingBusiness.set(false); }
   
   openEditBusinessModal(): void {
     const company = this.activeCompany();
@@ -278,18 +359,15 @@ export class AppComponent implements OnInit, OnDestroy {
       this.isEditingBusiness.set(true);
     }
   }
-
   closeEditBusinessModal(): void {
     this.isEditingBusiness.set(false);
+    this.closeLogoPicker();
   }
 
   crearEmpresa(): void {
     if (this.empresaForm.invalid) return;
-
     this.isSubmitting.set(true);
-    const nuevoNombre = this.empresaForm.value.nombre;
-    
-    this.supabase.addEmpresa({ nombre: nuevoNombre }).subscribe(empresa => {
+    this.supabase.addEmpresa({ nombre: this.empresaForm.value.nombre }).subscribe(empresa => {
       this.empresas.update(list => [...list, empresa]);
       this.supabase.getModulos().subscribe(modulos => this.modulos.set(modulos));
       this.isSubmitting.set(false);
@@ -300,12 +378,7 @@ export class AppComponent implements OnInit, OnDestroy {
   saveBusinessChanges(): void {
       if (this.editEmpresaForm.invalid || !this.activeCompanyId()) return;
       this.isSubmitting.set(true);
-      
-      const updatedData = {
-          id: this.activeCompanyId()!,
-          ...this.editEmpresaForm.value
-      };
-
+      const updatedData = { id: this.activeCompanyId()!, ...this.editEmpresaForm.value };
       this.supabase.updateEmpresa(updatedData).subscribe(updatedEmpresa => {
           this.empresas.update(list => list.map(e => e.id === updatedEmpresa.id ? updatedEmpresa : e));
           this.isSubmitting.set(false);
@@ -313,116 +386,151 @@ export class AppComponent implements OnInit, OnDestroy {
       });
   }
 
-  // --- Google Maps Integration for EDITING ---
-  private initEditMap(): void {
-    if (this.mapsApiStatus() === 'error') {
-      return;
+  toggleSidebar(): void { this.isSidebarCollapsed.update(v => !v); }
+
+  openLogoPicker(): void { this.isLogoPickerOpen.set(true); }
+  closeLogoPicker(): void { this.isLogoPickerOpen.set(false); }
+  selectLogo(logoUrl: string): void {
+    this.editEmpresaForm.patchValue({ logo_url: logoUrl });
+    this.closeLogoPicker();
+  }
+
+  // --- Module Installer ---
+  openModuleInstaller(company: Empresa): void {
+    this.installingForCompany.set(company);
+    this.isModuleInstallerOpen.set(true);
+  }
+  closeModuleInstaller(): void {
+    this.isModuleInstallerOpen.set(false);
+    this.installingForCompany.set(null);
+  }
+  isModuleInstalled(moduleName: string): boolean {
+    const company = this.installingForCompany();
+    if (!company) return this.modulos().some(m => m.company_id === this.activeCompanyId() && m.nombre === moduleName);
+    return this.modulos().some(m => m.company_id === company.id && m.nombre === moduleName);
+  }
+  installModule(moduleName: string): void {
+    const company = this.installingForCompany();
+    if (!company || this.isModuleInstalled(moduleName)) return;
+    this.isInstallingModule.set(moduleName);
+    this.supabase.installModule(company.id, moduleName).subscribe(newModule => {
+      this.modulos.update(list => [...list, newModule]);
+      this.isInstallingModule.set(null);
+    });
+  }
+
+  // --- Inventory Module Methods ---
+  get customFields(): FormArray { return this.productoForm.get('custom_fields') as FormArray; }
+  addCustomField(key = '', value = ''): void {
+    this.customFields.push(new FormGroup({
+      key: new FormControl(key, Validators.required),
+      value: new FormControl(value, Validators.required)
+    }));
+  }
+  removeCustomField(index: number): void { this.customFields.removeAt(index); }
+
+  startAddingProducto(): void {
+    this.editingProducto.set(null);
+    this.productoForm.reset({ nombre: '', sku: '', descripcion: '' });
+    this.customFields.clear();
+    this.productoModalState.set('add');
+  }
+  startEditingProducto(producto: Producto): void {
+    this.editingProducto.set(producto);
+    this.productoForm.patchValue(producto);
+    this.customFields.clear();
+    Object.entries(producto.custom_fields || {}).forEach(([key, value]) => this.addCustomField(key, value));
+    this.productoModalState.set('edit');
+  }
+  closeProductoModal(): void {
+    this.editingProducto.set(null);
+    this.productoModalState.set('closed');
+  }
+
+  saveProducto(): void {
+    if (this.productoForm.invalid || !this.activeCompanyId()) return;
+    this.isSubmitting.set(true);
+    const formVal = this.productoForm.value;
+    const custom_fields = formVal.custom_fields.reduce((acc: any, curr: any) => {
+      if (curr.key) acc[curr.key] = curr.value;
+      return acc;
+    }, {});
+    const productoData = { ...formVal, custom_fields, company_id: this.activeCompanyId()! };
+
+    if (this.editingProducto()) {
+      this.supabase.updateProducto(productoData).subscribe(updated => {
+        this.productos.update(list => list.map(p => p.id === updated.id ? updated : p));
+        this.finishSubmittingProducto();
+      });
+    } else {
+      const { id, ...newData } = productoData;
+      this.supabase.addProducto(newData).subscribe(nuevo => {
+        this.productos.update(list => [...list, nuevo]);
+        this.supabase.getStockPorCompania(this.activeCompanyId()!).subscribe(stock => this.stock.set(stock));
+        this.finishSubmittingProducto();
+      });
     }
-
-    if (typeof google === 'undefined' || typeof google.maps === 'undefined' || !this.addressInput || !this.mapContainer) {
-      setTimeout(() => this.initEditMap(), 200);
-      return;
+  }
+  private finishSubmittingProducto(): void {
+    this.isSubmitting.set(false);
+    this.closeProductoModal();
+  }
+  deleteProducto(productoId: number): void {
+    if (confirm('¿Está seguro de eliminar este producto?')) {
+      this.supabase.deleteProducto(productoId).subscribe(() => {
+        this.productos.update(list => list.filter(p => p.id !== productoId));
+      });
     }
-    
-    try {
-        const isEditing = !!this.editingSucursal();
-        const initialCoords = isEditing
-          ? { lat: this.editingSucursal()!.latitud, lng: this.editingSucursal()!.longitud }
-          : { lat: 19.4326, lng: -99.1332 }; // Default: Mexico City
+  }
 
-        this.map = new google.maps.Map(this.mapContainer.nativeElement, {
-          center: initialCoords,
-          zoom: isEditing ? 16 : 12,
-          mapTypeControl: false,
-          streetViewControl: false,
-        });
-
-        this.marker = new google.maps.Marker({
-          position: initialCoords,
-          map: this.map,
-          draggable: true,
-        });
-
-        this.marker.addListener('dragend', (event: any) => {
-          const newPosition = { lat: event.latLng.lat(), lng: event.latLng.lng() };
-          this.updateFormFromMarker(newPosition);
-        });
-        
-        const autocomplete = new google.maps.places.Autocomplete(this.addressInput.nativeElement, {
-          types: ['address'],
-        });
-
-        autocomplete.addListener('place_changed', () => {
-          const place = autocomplete.getPlace();
-          if (place.geometry && place.geometry.location) {
-            const newPosition = {
-              lat: place.geometry.location.lat(),
-              lng: place.geometry.location.lng(),
-            };
-            this.updateMapAndForm(place.formatted_address, newPosition);
+  openImportModal(): void { this.isImportModalOpen.set(true); }
+  closeImportModal(): void { this.isImportModalOpen.set(false); }
+  importProductosDesdeCSV(event: Event): void {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file || !this.activeCompanyId()) return;
+    this.isSubmitting.set(true);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      const lines = text.split('\n').filter(line => line.trim() !== '');
+      const headers = lines.shift()?.split(',').map(h => h.trim()) || [];
+      const productos: Omit<Producto, 'id'>[] = lines.map(line => {
+        const values = line.split(',');
+        const p: any = { company_id: this.activeCompanyId()!, custom_fields: {} };
+        headers.forEach((header, i) => {
+          const value = values[i]?.trim() || '';
+          if (header === 'nombre' || header === 'sku' || header === 'descripcion') {
+            p[header] = value;
+          } else {
+            p.custom_fields[header] = value;
           }
         });
-
-        this.geocoder = new google.maps.Geocoder();
-        this.mapsApiStatus.set('ready');
-    } catch (e) {
-        console.error("Error initializing Google Maps:", e);
-        this.mapsApiStatus.set('error');
-    }
-  }
-
-  private updateMapAndForm(address: string | undefined, position: { lat: number, lng: number }): void {
-    if (address) {
-      this.sucursalForm.patchValue({ direccion: address });
-    }
-    this.sucursalForm.patchValue({
-      latitud: position.lat,
-      longitud: position.lng,
-    });
-
-    this.map.setCenter(position);
-    this.marker.setPosition(position);
-    this.cdr.detectChanges();
-  }
-
-  private updateFormFromMarker(position: { lat: number, lng: number }): void {
-    this.geocoder.geocode({ location: position }, (results: any[], status: string) => {
-      let address = 'Dirección no encontrada';
-      if (status === 'OK' && results[0]) {
-        address = results[0].formatted_address;
-      }
-      this.updateMapAndForm(address, position);
-    });
-  }
-
-  // --- Iframe Message Handler for ADDING ---
-  private handleAddressSelectionMessage(event: MessageEvent): void {
-    if (event.origin !== 'https://storage.googleapis.com' || this.locationModuleState() !== 'add') {
-      return;
-    }
-
-    let data;
-    if (typeof event.data === 'string') {
-      try {
-        data = JSON.parse(event.data);
-      } catch (e) {
-        console.warn('Received a non-JSON message:', event.data);
-        return;
-      }
-    } else if (typeof event.data === 'object' && event.data !== null) {
-      data = event.data;
-    }
-
-    // Heuristic check for address data from the iframe
-    if (data && data.address && typeof data.lat === 'number' && typeof data.lng === 'number') {
-      this.sucursalForm.patchValue({
-        direccion: data.address,
-        latitud: data.lat,
-        longitud: data.lng,
+        return p;
       });
-      this.cdr.detectChanges();
-    } else {
-        console.warn('Received message from iframe with unexpected format:', data);
-    }
+      this.supabase.importarProductos(productos).subscribe(nuevos => {
+        this.productos.update(list => [...list, ...nuevos]);
+        this.isSubmitting.set(false);
+        this.closeImportModal();
+        if(this.csvImportInput) this.csvImportInput.nativeElement.value = '';
+      });
+    };
+    reader.readAsText(file);
+  }
+
+  startEditingStock(stockItem: StockInventario & { productName: string; sucursalName: string }): void {
+    this.editingStock.set(stockItem);
+    this.stockForm.patchValue({ cantidad: stockItem.cantidad });
+  }
+  closeStockModal(): void { this.editingStock.set(null); }
+  saveStock(): void {
+    if (this.stockForm.invalid || !this.editingStock()) return;
+    this.isSubmitting.set(true);
+    const { product_id, sucursal_id } = this.editingStock()!;
+    const cantidad = this.stockForm.value.cantidad;
+    this.supabase.updateStock(product_id, sucursal_id, cantidad).subscribe(updated => {
+      this.stock.update(list => list.map(s => (s.product_id === updated.product_id && s.sucursal_id === updated.sucursal_id) ? updated : s));
+      this.isSubmitting.set(false);
+      this.closeStockModal();
+    });
   }
 }
