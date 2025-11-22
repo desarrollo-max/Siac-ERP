@@ -30,6 +30,8 @@ export interface Modulo {
   id: number;
   company_id: string;
   nombre: string;
+  iconUrl: string;
+  category: string;
 }
 
 export interface UsuarioParaAdmin extends Usuario {
@@ -39,6 +41,7 @@ export interface UsuarioParaAdmin extends Usuario {
 export interface AvailableModule {
   name: string;
   category: string;
+  iconUrl: string;
 }
 
 export interface Producto {

@@ -23,56 +23,23 @@ let MOCK_STOCK_INVENTARIO: StockInventario[] = [];
 
 
 const MOCK_AVAILABLE_MODULES: AvailableModule[] = [
-    { name: 'Contabilidad', category: 'FINANZAS' },
-    { name: 'Facturación', category: 'FINANZAS' },
-    { name: 'Gastos', category: 'FINANZAS' },
-    { name: 'Hoja de cálculo (BI)', category: 'FINANZAS' },
-    { name: 'Documentos', category: 'FINANZAS' },
-    { name: 'Firma electrónica', category: 'FINANZAS' },
-    { name: 'CRM', category: 'VENTAS' },
-    { name: 'Ventas', category: 'VENTAS' },
-    { name: 'PdV para tiendas', category: 'VENTAS' },
-    { name: 'PdV para restaurantes', category: 'VENTAS' },
-    { name: 'Suscripciones', category: 'VENTAS' },
-    { name: 'Alquiler', category: 'VENTAS' },
-    { name: 'Creador de sitios web', category: 'SITIOS WEB' },
-    { name: 'Comercio electrónico', category: 'SITIOS WEB' },
-    { name: 'Blog', category: 'SITIOS WEB' },
-    { name: 'Foro', category: 'SITIOS WEB' },
-    { name: 'Chat en vivo', category: 'SITIOS WEB' },
-    { name: 'eLearning', category: 'SITIOS WEB' },
-    { name: 'Ubicaciones Físicas', category: 'CADENA DE SUMINISTRO' },
-    { name: 'Inventario', category: 'CADENA DE SUMINISTRO' },
-    { name: 'Manufactura', category: 'CADENA DE SUMINISTRO' },
-    { name: 'PLM', category: 'CADENA DE SUMINISTRO' },
-    { name: 'Compras', category: 'CADENA DE SUMINISTRO' },
-    { name: 'Mantenimiento', category: 'CADENA DE SUMINISTRO' },
-    { name: 'Calidad', category: 'CADENA DE SUMINISTRO' },
-    { name: 'Empleados', category: 'RECURSOS HUMANOS' },
-    { name: 'Reclutamiento', category: 'RECURSOS HUMANOS' },
-    { name: 'Vacaciones', category: 'RECURSOS HUMANOS' },
-    { name: 'Evaluaciones', category: 'RECURSOS HUMANOS' },
-    { name: 'Referencias', category: 'RECURSOS HUMANOS' },
-    { name: 'Flotilla', category: 'RECURSOS HUMANOS' },
-    { name: 'Redes sociales', category: 'MARKETING' },
-    { name: 'Marketing por correo', category: 'MARKETING' },
-    { name: 'Marketing por SMS', category: 'MARKETING' },
-    { name: 'Eventos', category: 'MARKETING' },
-    { name: 'Automatización de marketing', category: 'MARKETING' },
-    { name: 'Encuestas', category: 'MARKETING' },
-    { name: 'Proyectos', category: 'SERVICIOS' },
-    { name: 'Registro de horas', category: 'SERVICIOS' },
-    { name: 'Servicio externo', category: 'SERVICIOS' },
-    { name: 'Soporte al cliente', category: 'SERVICIOS' },
-    { name: 'Planeación', category: 'SERVICIOS' },
-    { name: 'Citas', category: 'SERVICIOS' },
-    { name: 'Conversaciones', category: 'PRODUCTIVIDAD' },
-    { name: 'Aprobaciones', category: 'PRODUCTIVIDAD' },
-    { name: 'IoT', category: 'PRODUCTIVIDAD' },
-    { name: 'VoIP', category: 'PRODUCTIVIDAD' },
-    { name: 'Artículos', category: 'PRODUCTIVIDAD' },
-    { name: 'WhatsApp', category: 'PRODUCTIVIDAD' },
+    { name: 'Documentos', category: 'PRODUCTIVIDAD', iconUrl: 'https://img.icons8.com/fluency/48/google-docs.png' },
+    { name: 'Aprobaciones', category: 'PRODUCTIVIDAD', iconUrl: 'https://img.icons8.com/fluency/48/checked-2.png' },
+    { name: 'Artículos', category: 'PRODUCTIVIDAD', iconUrl: 'https://img.icons8.com/fluency/48/bookmark-ribbon.png' },
+    { name: 'Inventario', category: 'CADENA DE SUMINISTRO', iconUrl: 'https://img.icons8.com/fluency/48/box.png' },
+    { name: 'Manufactura', category: 'CADENA DE SUMINISTRO', iconUrl: 'https://img.icons8.com/fluency/48/factory.png' },
+    { name: 'Compras', category: 'CADENA DE SUMINISTRO', iconUrl: 'https://img.icons8.com/fluency/48/purchase-order.png' },
+    { name: 'Mantenimiento', category: 'CADENA DE SUMINISTRO', iconUrl: 'https://img.icons8.com/fluency/48/maintenance.png' },
+    { name: 'Calidad', category: 'CADENA DE SUMINISTRO', iconUrl: 'https://img.icons8.com/fluency/48/inspection.png' },
+    { name: 'Reparación', category: 'CADENA DE SUMINISTRO', iconUrl: 'https://img.icons8.com/fluency/48/worker-male.png' },
+    { name: 'Marketing por correo', category: 'MARKETING', iconUrl: 'https://img.icons8.com/fluency/48/send-mass-email.png' },
+    { name: 'Marketing por SMS', category: 'MARKETING', iconUrl: 'https://img.icons8.com/fluency/48/sms.png' },
+    { name: 'Encuesta', category: 'MARKETING', iconUrl: 'https://img.icons8.com/fluency/48/survey.png' },
+    { name: 'Ubicaciones Físicas', category: 'CADENA DE SUMINISTRO', iconUrl: 'https://img.icons8.com/fluency/48/place-marker.png' },
 ];
+
+// Módulos que realmente tienen una UI implementada
+const DEVELOPED_MODULE_NAMES = new Set(['Inventario', 'Ubicaciones Físicas', 'Documentos', 'Aprobaciones', 'Compras', 'Mantenimiento']);
 
 
 @Injectable({
@@ -258,14 +225,21 @@ export class SupabaseService {
   }
 
   getAvailableModules(): Observable<AvailableModule[]> {
-      return of(MOCK_AVAILABLE_MODULES).pipe(delay(400));
+      const developedModules = MOCK_AVAILABLE_MODULES.filter(m => DEVELOPED_MODULE_NAMES.has(m.name));
+      return of(developedModules).pipe(delay(400));
   }
 
   installModule(companyId: string, moduleName: string): Observable<Modulo> {
+      const availableModule = MOCK_AVAILABLE_MODULES.find(m => m.name === moduleName);
+      if (!availableModule) {
+        return new Observable(o => o.error('Module not found in catalog'));
+      }
       const newModule: Modulo = {
           id: nextModuloId++,
           company_id: companyId,
           nombre: moduleName,
+          iconUrl: availableModule.iconUrl,
+          category: availableModule.category
       };
       MOCK_MODULOS.push(newModule);
       return of(newModule).pipe(delay(600));

@@ -6,7 +6,7 @@ import { Empresa, Sucursal, Modulo, UsuarioParaAdmin, AvailableModule, Producto,
 
 declare var google: any;
 
-type AppView = 'launcher' | 'business_dashboard' | 'user_management';
+type AppView = 'launcher' | 'business_dashboard' | 'user_management' | 'module_view';
 type LocationModuleState = 'view' | 'add' | 'edit';
 
 @Component({
@@ -25,6 +25,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   // --- View State ---
   activeView = signal<AppView>('launcher');
+  activeModuleName = signal<string | null>(null);
 
   // --- Data Signals ---
   empresas = signal<Empresa[]>([]);
@@ -42,8 +43,14 @@ export class AppComponent implements OnInit, OnDestroy {
   activeCompanyLogo = computed(() => this.activeCompany()?.logo_url || 'https://bupapjirkilnfoswgtsg.supabase.co/storage/v1/object/public/assets/logo.png');
   activeCompanyIcon = computed(() => this.activeCompany()?.logo_icon_url || 'https://bupapjirkilnfoswgtsg.supabase.co/storage/v1/object/public/assets/icono.png');
 
-  isLocationsModuleInstalled = computed(() => this.modulos().some(m => m.company_id === this.activeCompanyId() && m.nombre === 'Ubicaciones Físicas'));
-  isInventoryModuleInstalled = computed(() => this.modulos().some(m => m.company_id === this.activeCompanyId() && m.nombre === 'Inventario'));
+  installedModulesForActiveCompany = computed(() => {
+    const companyId = this.activeCompanyId();
+    if (!companyId) return [];
+    return this.modulos().filter(m => m.company_id === companyId);
+  });
+
+  isLocationsModuleInstalled = computed(() => this.installedModulesForActiveCompany().some(m => m.nombre === 'Ubicaciones Físicas'));
+  isInventoryModuleInstalled = computed(() => this.installedModulesForActiveCompany().some(m => m.nombre === 'Inventario'));
   
   // --- ACL Editing State ---
   editingUser = signal<UsuarioParaAdmin | null>(null);
@@ -87,20 +94,9 @@ export class AppComponent implements OnInit, OnDestroy {
 
   // --- Module Installer State ---
   isModuleInstallerOpen = signal(false);
-  installingForCompany = signal<Empresa | null>(null);
   availableModules = signal<AvailableModule[]>([]);
   isInstallingModule = signal<string | null>(null);
-  moduleCategoryColors: { [key: string]: string } = {
-    'FINANZAS': 'text-teal-600 dark:text-teal-400',
-    'VENTAS': 'text-red-600 dark:text-red-400',
-    'SITIOS WEB': 'text-sky-600 dark:text-sky-400',
-    'CADENA DE SUMINISTRO': 'text-purple-600 dark:text-purple-400',
-    'RECURSOS HUMANOS': 'text-indigo-600 dark:text-indigo-400',
-    'MARKETING': 'text-orange-600 dark:text-orange-400',
-    'SERVICIOS': 'text-amber-600 dark:text-amber-400',
-    'PRODUCTIVIDAD': 'text-rose-600 dark:text-rose-400',
-  };
-
+  
   availableModulesByCategory = computed(() => {
     const grouped: { [key: string]: AvailableModule[] } = {};
     for (const mod of this.availableModules()) {
@@ -254,15 +250,25 @@ export class AppComponent implements OnInit, OnDestroy {
     return this.modulos().filter(m => m.company_id === companyId);
   }
   
+  // --- Navigation ---
   navigateToBusiness(companyId: string): void {
     this.activeCompanyId.set(companyId);
     this.activeView.set('business_dashboard');
-    this.locationModuleState.set('view');
   }
 
   navigateToLauncher(): void {
     this.activeView.set('launcher');
     this.activeCompanyId.set(null);
+  }
+  
+  navigateToAppLauncher(): void {
+    this.activeView.set('business_dashboard');
+    this.activeModuleName.set(null);
+  }
+
+  navigateToModule(moduleName: string): void {
+    this.activeModuleName.set(moduleName);
+    this.activeView.set('module_view');
   }
 
   navigateToUserManagement(): void {
@@ -396,24 +402,22 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   // --- Module Installer ---
-  openModuleInstaller(company: Empresa): void {
-    this.installingForCompany.set(company);
+  openModuleInstaller(): void {
     this.isModuleInstallerOpen.set(true);
   }
   closeModuleInstaller(): void {
     this.isModuleInstallerOpen.set(false);
-    this.installingForCompany.set(null);
   }
   isModuleInstalled(moduleName: string): boolean {
-    const company = this.installingForCompany();
-    if (!company) return this.modulos().some(m => m.company_id === this.activeCompanyId() && m.nombre === moduleName);
-    return this.modulos().some(m => m.company_id === company.id && m.nombre === moduleName);
+    const companyId = this.activeCompanyId();
+    if (!companyId) return false;
+    return this.modulos().some(m => m.company_id === companyId && m.nombre === moduleName);
   }
-  installModule(moduleName: string): void {
-    const company = this.installingForCompany();
-    if (!company || this.isModuleInstalled(moduleName)) return;
-    this.isInstallingModule.set(moduleName);
-    this.supabase.installModule(company.id, moduleName).subscribe(newModule => {
+  installModule(module: AvailableModule): void {
+    const companyId = this.activeCompanyId();
+    if (!companyId || this.isModuleInstalled(module.name)) return;
+    this.isInstallingModule.set(module.name);
+    this.supabase.installModule(companyId, module.name).subscribe(newModule => {
       this.modulos.update(list => [...list, newModule]);
       this.isInstallingModule.set(null);
     });
@@ -437,9 +441,12 @@ export class AppComponent implements OnInit, OnDestroy {
   }
   startEditingProducto(producto: Producto): void {
     this.editingProducto.set(producto);
-    this.productoForm.patchValue(producto);
+    // Separate base fields from custom fields to prevent FormArray type mismatch
+    const { custom_fields, ...baseProductoData } = producto;
+    this.productoForm.patchValue(baseProductoData);
+
     this.customFields.clear();
-    Object.entries(producto.custom_fields || {}).forEach(([key, value]) => this.addCustomField(key, value));
+    Object.entries(custom_fields || {}).forEach(([key, value]) => this.addCustomField(key, value));
     this.productoModalState.set('edit');
   }
   closeProductoModal(): void {
@@ -516,7 +523,7 @@ export class AppComponent implements OnInit, OnDestroy {
     };
     reader.readAsText(file);
   }
-
+bvbv
   startEditingStock(stockItem: StockInventario & { productName: string; sucursalName: string }): void {
     this.editingStock.set(stockItem);
     this.stockForm.patchValue({ cantidad: stockItem.cantidad });

@@ -26,15 +26,19 @@
               </button>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             @for(empresa of empresas(); track empresa.id) {
-              <div class="relative bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 group">
-                <button (click)="openModuleInstaller(empresa)" class="absolute top-4 right-4 p-2 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-blue-100 hover:text-blue-600 dark:hover:bg-blue-900/50 dark:hover:text-blue-400 transition-colors z-10" aria-label="Instalar módulos">
-                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-                </button>
+              <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 group">
                 <div class="p-6 md:p-8">
-                  <h2 class="text-2xl font-bold text-slate-900 dark:text-white">{{ empresa.nombre }}</h2>
-                  <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Grupo Empresarial</p>
+                  <div class="flex items-start justify-between">
+                    <div class="flex items-center gap-4">
+                       <img [src]="empresa.logo_icon_url" alt="Icono" class="h-12 w-12 rounded-lg object-cover">
+                       <div>
+                          <h2 class="text-2xl font-bold text-slate-900 dark:text-white">{{ empresa.nombre }}</h2>
+                          <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Grupo Empresarial</p>
+                       </div>
+                    </div>
+                  </div>
                   
                   <div class="mt-6">
                     <h3 class="text-sm font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Módulos Instalados</h3>
@@ -63,22 +67,63 @@
       }
 
       @case ('business_dashboard') {
+        <div class="h-screen w-screen overflow-hidden bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 dark:from-indigo-900/30 dark:via-purple-900/30 dark:to-pink-900/30">
+          <header class="p-4 flex justify-between items-center">
+            <button (click)="navigateToLauncher()" class="flex items-center gap-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg>
+              Todos los negocios
+            </button>
+            @if(activeCompany(); as company) {
+              <div class="flex items-center gap-3">
+                <span class="font-semibold text-slate-800 dark:text-slate-100">{{company.nombre}}</span>
+                <img [src]="company.logo_icon_url" class="h-8 w-8 rounded-full object-cover">
+              </div>
+            }
+          </header>
+          <main class="p-8 sm:p-12 md:p-16">
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6 md:gap-8">
+              @for(module of installedModulesForActiveCompany(); track module.id) {
+                <button (click)="navigateToModule(module.nombre)" class="flex flex-col items-center justify-center gap-2 text-center group">
+                  <div class="w-24 h-24 bg-white/80 dark:bg-slate-800/50 backdrop-blur-sm rounded-2xl shadow-lg flex items-center justify-center transition-all duration-300 group-hover:shadow-2xl group-hover:-translate-y-1">
+                    <img [src]="module.iconUrl" alt="" class="h-12 w-12">
+                  </div>
+                  <span class="text-sm font-semibold text-slate-700 dark:text-slate-200">{{module.nombre}}</span>
+                </button>
+              }
+              <button (click)="openModuleInstaller()" class="flex flex-col items-center justify-center gap-2 text-center group">
+                 <div class="w-24 h-24 bg-white/80 dark:bg-slate-800/50 backdrop-blur-sm rounded-2xl shadow-lg flex items-center justify-center transition-all duration-300 group-hover:shadow-2xl group-hover:-translate-y-1">
+                   <img src="https://img.icons8.com/fluency/48/plus-2-math.png" alt="Instalar Aplicaciones" class="h-12 w-12">
+                  </div>
+                  <span class="text-sm font-semibold text-slate-700 dark:text-slate-200">Aplicaciones</span>
+              </button>
+              <button (click)="openEditBusinessModal()" class="flex flex-col items-center justify-center gap-2 text-center group">
+                 <div class="w-24 h-24 bg-white/80 dark:bg-slate-800/50 backdrop-blur-sm rounded-2xl shadow-lg flex items-center justify-center transition-all duration-300 group-hover:shadow-2xl group-hover:-translate-y-1">
+                   <img src="https://img.icons8.com/fluency/48/settings.png" alt="Ajustes" class="h-12 w-12">
+                  </div>
+                  <span class="text-sm font-semibold text-slate-700 dark:text-slate-200">Ajustes</span>
+              </button>
+            </div>
+          </main>
+        </div>
+      }
+
+      @case ('module_view') {
         <div class="flex h-screen">
           <aside class="bg-white dark:bg-slate-800 flex flex-col flex-shrink-0 border-r border-slate-200 dark:border-slate-700 transition-all duration-300" [class.w-72]="!isSidebarCollapsed()" [class.w-20]="isSidebarCollapsed()">
-            <button (click)="openEditBusinessModal()" class="group p-4 border-b border-slate-200 dark:border-slate-700 flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors" [class.justify-center]="isSidebarCollapsed()">
+            <div class="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center gap-3" [class.justify-center]="isSidebarCollapsed()">
               <img [src]="activeCompanyIcon()" alt="Icono de la empresa" class="h-10 w-10 flex-shrink-0 rounded-full object-cover">
               <div class="flex-1 overflow-hidden" [class.hidden]="isSidebarCollapsed()">
                 @if (activeCompany(); as company) {
-                   <h2 class="text-base font-bold text-slate-800 dark:text-slate-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400">{{ company.nombre }}</h2>
+                   <h2 class="text-base font-bold text-slate-800 dark:text-slate-100 truncate">{{ company.nombre }}</h2>
                 }
-                <p class="text-xs text-slate-500 dark:text-slate-400">Panel de Negocio</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400">{{ activeModuleName() }}</p>
               </div>
-            </button>
+            </div>
 
             <nav class="flex-1 px-3 py-4 space-y-2">
-              <button (click)="navigateToLauncher()" class="w-full flex items-center p-3 rounded-lg bg-slate-100 dark:bg-slate-700/50 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors duration-200" [class.justify-center]="isSidebarCollapsed()">
-                <svg class="w-6 h-6 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" /></svg>
-                <span class="ml-3 flex-1 text-left" [class.hidden]="isSidebarCollapsed()">Volver al Launcher</span>
+              <button (click)="navigateToAppLauncher()" class="w-full flex items-center p-3 rounded-lg bg-slate-100 dark:bg-slate-700/50 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 font-medium transition-colors duration-200" [class.justify-center]="isSidebarCollapsed()">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" /></svg>
+                <span class="ml-3 flex-1 text-left" [class.hidden]="isSidebarCollapsed()">Volver al App Launcher</span>
               </button>
             </nav>
             <div class="px-3 py-4 border-t border-slate-200 dark:border-slate-700">
@@ -88,222 +133,192 @@
               </button>
             </div>
           </aside>
-
+          
           <main class="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto bg-slate-50 dark:bg-slate-950">
-            @if (activeCompany(); as company) {
-              <div class="max-w-6xl mx-auto">
-                <header class="mb-8 flex justify-between items-start">
-                  <div>
-                    <h1 class="text-3xl font-bold text-slate-800 dark:text-white">Panel de {{ company.nombre }}</h1>
-                    <p class="text-slate-500 dark:text-slate-400 mt-1">Gestión de recursos y validación de arquitectura RLS.</p>
+            @switch (activeModuleName()) {
+              @case ('Ubicaciones Físicas') {
+                <section class="bg-white dark:bg-slate-800/50 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700">
+                  <div class="p-6 flex justify-between items-center border-b border-slate-200 dark:border-slate-700">
+                      <h2 class="text-xl font-semibold text-slate-800 dark:text-slate-100">Módulo de Ubicaciones Físicas</h2>
+                      @if(locationModuleState() === 'view') {
+                        <button (click)="startAddingSucursal()" class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700">
+                          <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                          Agregar Ubicación
+                        </button>
+                      }
                   </div>
-                  <button (click)="openModuleInstaller(company)" class="inline-flex items-center gap-2 px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-                    Instalar Apps
-                  </button>
-                </header>
-
-                <div class="space-y-8">
-                  @if (getModulesForCompany(company.id).length === 0) {
-                     <div class="text-center py-16 px-4 bg-white dark:bg-slate-800/50 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700">
-                        <svg class="mx-auto h-12 w-12 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" /></svg>
-                        <h3 class="mt-2 text-lg font-medium text-slate-900 dark:text-white">Panel de Negocio Vacío</h3>
-                        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Instale su primera aplicación para comenzar a gestionar este negocio.</p>
-                      </div>
-                  }
-                  @if (isLocationsModuleInstalled()) {
-                    <section class="bg-white dark:bg-slate-800/50 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700">
-                      <div class="p-6 flex justify-between items-center border-b border-slate-200 dark:border-slate-700">
-                          <h2 class="text-xl font-semibold text-slate-800 dark:text-slate-100">Módulo de Ubicaciones Físicas</h2>
-                          @if(locationModuleState() === 'view') {
-                            <button (click)="startAddingSucursal()" class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700">
-                              <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-                              Agregar Ubicación
-                            </button>
-                          }
-                      </div>
-                      <div class="p-6">
-                        @if (locationModuleState() === 'view') {
-                          @if (sucursales().length > 0) {
-                            <div class="space-y-4">
-                              @for (sucursal of sucursales(); track sucursal.id) {
-                                <div class="bg-slate-100 dark:bg-slate-700/50 p-4 rounded-lg border border-slate-200 dark:border-slate-600 flex justify-between items-center">
-                                  <div>
-                                    <p class="font-bold text-slate-800 dark:text-slate-200">{{ sucursal.nombre }}</p>
-                                    <p class="text-sm text-slate-600 dark:text-slate-400">{{ sucursal.direccion }}</p>
-                                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 font-mono">Lat: {{ sucursal.latitud | number:'1.4-4' }}, Lon: {{ sucursal.longitud | number:'1.4-4' }}</p>
-                                  </div>
-                                  <div class="flex items-center gap-2">
-                                     <button (click)="startEditingSucursal(sucursal)" class="p-2 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-full hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" /><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 7.125L18 8.625" /></svg>
-                                     </button>
-                                      <button (click)="eliminarSucursal(sucursal.id)" class="p-2 text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 rounded-full hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
-                                     </button>
-                                  </div>
-                                </div>
-                              }
-                            </div>
-                          } @else {
-                            <div class="text-center py-8 px-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
-                              <svg class="mx-auto h-12 w-12 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" /></svg>
-                              <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">Sin ubicaciones</h3>
-                              <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Comience agregando su primera ubicación física.</p>
+                  <div class="p-6">
+                    @if (locationModuleState() === 'view') {
+                      @if (sucursales().length > 0) {
+                        <div class="space-y-4">
+                          @for (sucursal of sucursales(); track sucursal.id) {
+                            <div class="bg-slate-100 dark:bg-slate-700/50 p-4 rounded-lg border border-slate-200 dark:border-slate-600 flex justify-between items-center">
+                              <div>
+                                <p class="font-bold text-slate-800 dark:text-slate-200">{{ sucursal.nombre }}</p>
+                                <p class="text-sm text-slate-600 dark:text-slate-400">{{ sucursal.direccion }}</p>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 font-mono">Lat: {{ sucursal.latitud | number:'1.4-4' }}, Lon: {{ sucursal.longitud | number:'1.4-4' }}</p>
+                              </div>
+                              <div class="flex items-center gap-2">
+                                 <button (click)="startEditingSucursal(sucursal)" class="p-2 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-full hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" /><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 7.125L18 8.625" /></svg>
+                                 </button>
+                                  <button (click)="eliminarSucursal(sucursal.id)" class="p-2 text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 rounded-full hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 4.811 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
+                                 </button>
+                              </div>
                             </div>
                           }
+                        </div>
+                      } @else {
+                        <div class="text-center py-8 px-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
+                          <svg class="mx-auto h-12 w-12 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" /></svg>
+                          <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">Sin ubicaciones</h3>
+                          <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Comience agregando su primera ubicación física.</p>
+                        </div>
+                      }
+                    } @else {
+                      <div class="mb-4">
+                        @if (editingSucursal(); as sucursal) {
+                          <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-100">Editando Ubicación: <span class="text-blue-600 dark:text-blue-400">{{ sucursal.nombre }}</span></h3>
                         } @else {
-                          <div class="mb-4">
-                            @if (editingSucursal(); as sucursal) {
-                              <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-100">Editando Ubicación: <span class="text-blue-600 dark:text-blue-400">{{ sucursal.nombre }}</span></h3>
-                            } @else {
-                              <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-100">Agregar Nueva Ubicación</h3>
-                            }
-                          </div>
-                          <form [formGroup]="sucursalForm" (ngSubmit)="saveSucursal()" class="space-y-6">
-                            <div>
-                              <label for="sucursal-nombre" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Nombre de la ubicación</label>
-                              <input id="sucursal-nombre" formControlName="nombre" placeholder="Ej: Bodega Central, Oficina Principal..." class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 dark:placeholder:text-slate-400">
-                            </div>
-                            <div>
-                              <label for="sucursal-direccion" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Dirección</label>
-                              <input #addressInput id="sucursal-direccion" type="text" formControlName="direccion" placeholder="Escriba y seleccione una dirección..." class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 dark:placeholder:text-slate-400">
-                               @if (mapsApiStatus() === 'loading') { <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">Cargando autocompletado...</p> }
-                               @if (mapsApiStatus() === 'error') { <p class="mt-2 text-xs text-red-600 dark:text-red-400">No se pudo cargar el autocompletado.</p> }
-                            </div>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                              <div>
-                                <label for="sucursal-latitud" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Latitud</label>
-                                <input id="sucursal-latitud" type="number" formControlName="latitud" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm bg-slate-100 dark:bg-slate-800 cursor-not-allowed">
-                              </div>
-                              <div>
-                                <label for="sucursal-longitud" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Longitud</label>
-                                <input id="sucursal-longitud" type="number" formControlName="longitud" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm bg-slate-100 dark:bg-slate-800 cursor-not-allowed">
-                              </div>
-                            </div>
-                             <div class="flex justify-end pt-2 gap-3">
-                                <button type="button" (click)="cancelEditOrAdd()" class="px-4 py-2 text-sm font-medium rounded-md text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-600 hover:bg-slate-100 dark:hover:bg-slate-500 border border-slate-300 dark:border-slate-500 shadow-sm">Cancelar</button>
-                                <button type="submit" [disabled]="sucursalForm.invalid || isSubmitting()" class="inline-flex justify-center py-2 px-6 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50">
-                                  {{ isSubmitting() ? 'Guardando...' : 'Guardar Cambios' }}
-                                </button>
-                             </div>
-                          </form>
+                          <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-100">Agregar Nueva Ubicación</h3>
                         }
                       </div>
-                    </section>
-                  }
-                  
-                  @if (isInventoryModuleInstalled()) {
-                    <section class="bg-white dark:bg-slate-800/50 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700">
-                      <div class="p-6 border-b border-slate-200 dark:border-slate-700">
-                        <div class="flex justify-between items-center">
-                          <h2 class="text-xl font-semibold text-slate-800 dark:text-slate-100">Módulo de Inventario</h2>
-                           <div class="flex items-center gap-2">
-                            <button (click)="openImportModal()" class="inline-flex items-center justify-center px-4 py-2 border border-slate-300 dark:border-slate-600 text-sm font-medium rounded-lg shadow-sm text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 mr-2"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-11.25a.75.75 0 00-1.5 0v4.59L7.3 9.7a.75.75 0 00-1.1 1.02l3.25 3.5a.75.75 0 001.1 0l3.25-3.5a.75.75 0 10-1.1-1.02l-1.95 2.1V6.75z" clip-rule="evenodd" /></svg>
-                                Importar
-                            </button>
-                            <button (click)="startAddingProducto()" class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700">
-                              <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-                              Nuevo Producto
-                            </button>
+                      <form [formGroup]="sucursalForm" (ngSubmit)="saveSucursal()" class="space-y-6">
+                        <div>
+                          <label for="sucursal-nombre" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Nombre de la ubicación</label>
+                          <input id="sucursal-nombre" formControlName="nombre" placeholder="Ej: Bodega Central, Oficina Principal..." class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 dark:placeholder:text-slate-400">
+                        </div>
+                        <div>
+                          <label for="sucursal-direccion" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Dirección</label>
+                          <input #addressInput id="sucursal-direccion" type="text" formControlName="direccion" placeholder="Escriba y seleccione una dirección..." class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 dark:placeholder:text-slate-400">
+                           @if (mapsApiStatus() === 'loading') { <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">Cargando autocompletado...</p> }
+                           @if (mapsApiStatus() === 'error') { <p class="mt-2 text-xs text-red-600 dark:text-red-400">No se pudo cargar el autocompletado.</p> }
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                          <div>
+                            <label for="sucursal-latitud" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Latitud</label>
+                            <input id="sucursal-latitud" type="number" formControlName="latitud" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm bg-slate-100 dark:bg-slate-800 cursor-not-allowed">
+                          </div>
+                          <div>
+                            <label for="sucursal-longitud" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Longitud</label>
+                            <input id="sucursal-longitud" type="number" formControlName="longitud" class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 shadow-sm bg-slate-100 dark:bg-slate-800 cursor-not-allowed">
                           </div>
                         </div>
-                         <div class="mt-4 border-b border-slate-200 dark:border-slate-700">
-                            <nav class="-mb-px flex space-x-6" aria-label="Tabs">
-                              <button (click)="activeInventoryTab.set('products')" [class.border-blue-500]="activeInventoryTab() === 'products'" [class.text-blue-600]="activeInventoryTab() === 'products'" [class.dark:text-blue-400]="activeInventoryTab() === 'products'" class="border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:border-slate-300 dark:hover:border-slate-500 whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm">Productos</button>
-                              <button (click)="activeInventoryTab.set('stock')" [class.border-blue-500]="activeInventoryTab() === 'stock'" [class.text-blue-600]="activeInventoryTab() === 'stock'" [class.dark:text-blue-400]="activeInventoryTab() === 'stock'" class="border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:border-slate-300 dark:hover:border-slate-500 whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm">Stock por Ubicación</button>
-                            </nav>
+                         <div class="flex justify-end pt-2 gap-3">
+                            <button type="button" (click)="cancelEditOrAdd()" class="px-4 py-2 text-sm font-medium rounded-md text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-600 hover:bg-slate-100 dark:hover:bg-slate-500 border border-slate-300 dark:border-slate-500 shadow-sm">Cancelar</button>
+                            <button type="submit" [disabled]="sucursalForm.invalid || isSubmitting()" class="inline-flex justify-center py-2 px-6 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50">
+                              {{ isSubmitting() ? 'Guardando...' : 'Guardar Cambios' }}
+                            </button>
+                         </div>
+                      </form>
+                    }
+                  </div>
+                </section>
+              }
+              @case ('Inventario') {
+                <section class="bg-white dark:bg-slate-800/50 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700">
+                  <div class="p-6 border-b border-slate-200 dark:border-slate-700">
+                    <div class="flex justify-between items-center">
+                      <h2 class="text-xl font-semibold text-slate-800 dark:text-slate-100">Módulo de Inventario</h2>
+                       <div class="flex items-center gap-2">
+                        <button (click)="openImportModal()" class="inline-flex items-center justify-center px-4 py-2 border border-slate-300 dark:border-slate-600 text-sm font-medium rounded-lg shadow-sm text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 mr-2"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-11.25a.75.75 0 00-1.5 0v4.59L7.3 9.7a.75.75 0 00-1.1 1.02l3.25 3.5a.75.75 0 001.1 0l3.25-3.5a.75.75 0 10-1.1-1.02l-1.95 2.1V6.75z" clip-rule="evenodd" /></svg>
+                            Importar
+                        </button>
+                        <button (click)="startAddingProducto()" class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700">
+                          <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                          Nuevo Producto
+                        </button>
+                      </div>
+                    </div>
+                     <div class="mt-4 border-b border-slate-200 dark:border-slate-700">
+                        <nav class="-mb-px flex space-x-6" aria-label="Tabs">
+                          <button (click)="activeInventoryTab.set('products')" [class.border-blue-500]="activeInventoryTab() === 'products'" [class.text-blue-600]="activeInventoryTab() === 'products'" [class.dark:text-blue-400]="activeInventoryTab() === 'products'" class="border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:border-slate-300 dark:hover:border-slate-500 whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm">Productos</button>
+                          <button (click)="activeInventoryTab.set('stock')" [class.border-blue-500]="activeInventoryTab() === 'stock'" [class.text-blue-600]="activeInventoryTab() === 'stock'" [class.dark:text-blue-400]="activeInventoryTab() === 'stock'" class="border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:border-slate-300 dark:hover:border-slate-500 whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm">Stock por Ubicación</button>
+                        </nav>
+                      </div>
+                  </div>
+                  <div class="p-6">
+                    @switch(activeInventoryTab()) {
+                      @case('products') {
+                        @if(productos().length > 0) {
+                          <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                              <thead class="bg-slate-50 dark:bg-slate-700/50">
+                                <tr>
+                                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Producto</th>
+                                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">SKU</th>
+                                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Descripción</th>
+                                  <th scope="col" class="relative px-6 py-3"><span class="sr-only">Acciones</span></th>
+                                </tr>
+                              </thead>
+                              <tbody class="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
+                                @for(producto of productos(); track producto.id) {
+                                  <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-white">{{ producto.nombre }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400 font-mono">{{ producto.sku }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400 truncate max-w-xs">{{ producto.descripcion }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                      <div class="flex items-center justify-end gap-2">
+                                        <button (click)="startEditingProducto(producto)" class="p-2 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-full hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
+                                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" /><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 7.125L18 8.625" /></svg>
+                                        </button>
+                                        <button (click)="deleteProducto(producto.id)" class="p-2 text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 rounded-full hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
+                                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 4.811 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
+                                        </button>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                }
+                              </tbody>
+                            </table>
                           </div>
-                      </div>
-                      <div class="p-6">
-                        @switch(activeInventoryTab()) {
-                          @case('products') {
-                            @if(productos().length > 0) {
-                              <div class="overflow-x-auto">
-                                <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-                                  <thead class="bg-slate-50 dark:bg-slate-700/50">
-                                    <tr>
-                                      <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Producto</th>
-                                      <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">SKU</th>
-                                      <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Descripción</th>
-                                      <th scope="col" class="relative px-6 py-3"><span class="sr-only">Acciones</span></th>
-                                    </tr>
-                                  </thead>
-                                  <tbody class="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
-                                    @for(producto of productos(); track producto.id) {
-                                      <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-white">{{ producto.nombre }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400 font-mono">{{ producto.sku }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400 truncate max-w-xs">{{ producto.descripcion }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                          <div class="flex items-center justify-end gap-2">
-                                            <button (click)="startEditingProducto(producto)" class="p-2 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-full hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
-                                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" /><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 7.125L18 8.625" /></svg>
-                                            </button>
-                                            <button (click)="deleteProducto(producto.id)" class="p-2 text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 rounded-full hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
-                                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
-                                            </button>
-                                          </div>
-                                        </td>
-                                      </tr>
-                                    }
-                                  </tbody>
-                                </table>
-                              </div>
-                            } @else {
-                              <div class="text-center py-8 px-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
-                                <svg class="mx-auto h-12 w-12 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" /></svg>
-                                <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">Sin productos</h3>
-                                <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Agregue su primer producto para comenzar.</p>
-                              </div>
-                            }
-                          }
-                          @case('stock') {
-                            @if(stockWithDetails().length > 0) {
-                               <div class="overflow-x-auto">
-                                <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-                                  <thead class="bg-slate-50 dark:bg-slate-700/50">
-                                    <tr>
-                                      <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Producto</th>
-                                      <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Ubicación</th>
-                                      <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Cantidad</th>
-                                      <th scope="col" class="relative px-6 py-3"><span class="sr-only">Acciones</span></th>
-                                    </tr>
-                                  </thead>
-                                  <tbody class="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
-                                    @for(item of stockWithDetails(); track item.product_id + '-' + item.sucursal_id) {
-                                      <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-white">{{ item.productName }} <span class="text-slate-400">({{item.productSku}})</span></td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">{{ item.sucursalName }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">{{ item.cantidad }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <button (click)="startEditingStock(item)" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">Ajustar</button>
-                                        </td>
-                                      </tr>
-                                    }
-                                  </tbody>
-                                </table>
-                              </div>
-                            } @else {
-                               <div class="text-center py-8 px-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
-                                <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">Sin datos de stock</h3>
-                                <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Agregue productos y ubicaciones para ver el inventario.</p>
-                              </div>
-                            }
-                          }
+                        } @else {
+                          <div class="text-center py-8 px-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
+                            <svg class="mx-auto h-12 w-12 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" /></svg>
+                            <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">Sin productos</h3>
+                            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Agregue su primer producto para comenzar.</p>
+                          </div>
                         }
-                      </div>
-                    </section>
-                  }
-                </div>
-              </div>
-            } @else {
-              <div class="flex items-center justify-center h-full">
-                <div class="text-center">
-                  <h2 class="text-xl font-semibold">Cargando datos del negocio...</h2>
-                   <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto mt-4"></div>
-                </div>
-              </div>
+                      }
+                      @case('stock') {
+                        @if(stockWithDetails().length > 0) {
+                           <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                              <thead class="bg-slate-50 dark:bg-slate-700/50">
+                                <tr>
+                                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Producto</th>
+                                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Ubicación</th>
+                                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">Cantidad</th>
+                                  <th scope="col" class="relative px-6 py-3"><span class="sr-only">Acciones</span></th>
+                                </tr>
+                              </thead>
+                              <tbody class="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
+                                @for(item of stockWithDetails(); track item.product_id + '-' + item.sucursal_id) {
+                                  <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-white">{{ item.productName }} <span class="text-slate-400">({{item.productSku}})</span></td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">{{ item.sucursalName }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">{{ item.cantidad }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        <button (click)="startEditingStock(item)" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">Ajustar</button>
+                                    </td>
+                                  </tr>
+                                }
+                              </tbody>
+                            </table>
+                          </div>
+                        } @else {
+                           <div class="text-center py-8 px-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
+                            <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">Sin datos de stock</h3>
+                            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Agregue productos y ubicaciones para ver el inventario.</p>
+                          </div>
+                        }
+                      }
+                    }
+                  </div>
+                </section>
+              }
             }
           </main>
         </div>
@@ -461,35 +476,44 @@
     </div>
   }
 
-  @if(isModuleInstallerOpen() && installingForCompany(); as company) {
+  @if(isModuleInstallerOpen()) {
      <div class="fixed inset-0 bg-slate-900/80 z-50 flex items-center justify-center p-4" (click)="closeModuleInstaller()">
-      <div class="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-4xl" (click)="$event.stopPropagation()">
+      <div class="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-5xl" (click)="$event.stopPropagation()">
         <div class="p-6 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
-          <h3 class="text-lg font-medium leading-6 text-slate-900 dark:text-white">Instalar Aplicaciones para {{company.nombre}}</h3>
+          <h3 class="text-lg font-medium leading-6 text-slate-900 dark:text-white">Aplicaciones</h3>
            <button (click)="closeModuleInstaller()" class="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
-        <div class="p-6 max-h-[70vh] overflow-y-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          @for(category of availableModulesByCategory(); track category[0]) {
-            <div class="space-y-4">
-              <h4 class="font-bold uppercase tracking-wider text-sm" [class]="moduleCategoryColors[category[0]] || 'text-slate-500'">{{category[0]}}</h4>
-              <ul class="space-y-2">
-                @for(mod of category[1]; track mod.name) {
-                  <li class="flex items-center justify-between">
-                    <span class="text-sm text-slate-700 dark:text-slate-300">{{mod.name}}</span>
+        <div class="p-8 bg-slate-50 dark:bg-slate-900/50 max-h-[70vh] overflow-y-auto">
+          <div class="space-y-12">
+            @for(category of availableModulesByCategory(); track category[0]) {
+              <section>
+                <h2 class="text-2xl font-bold mb-6 text-slate-800 dark:text-slate-100 font-serif" style="font-family: 'Comic Sans MS', cursive, sans-serif;">{{category[0]}}</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                  @for(mod of category[1]; track mod.name) {
                     @if(isModuleInstalled(mod.name)) {
-                      <button disabled class="px-3 py-1 text-xs font-medium rounded-full bg-slate-200 text-slate-600 dark:bg-slate-600 dark:text-slate-300 cursor-not-allowed">Instalado</button>
+                      <div class="bg-white dark:bg-slate-800 rounded-lg shadow-md p-4 flex items-center gap-4 opacity-60">
+                         <img [src]="mod.iconUrl" alt="" class="h-8 w-8">
+                         <div class="flex-1">
+                          <p class="font-semibold text-slate-900 dark:text-white">{{mod.name}}</p>
+                          <span class="text-xs text-green-600 dark:text-green-400 font-medium">Instalado</span>
+                         </div>
+                      </div>
                     } @else {
-                      <button (click)="installModule(mod.name)" [disabled]="isInstallingModule() === mod.name" class="px-3 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800 hover:bg-blue-200 dark:bg-blue-900/50 dark:text-blue-200 dark:hover:bg-blue-900/80 disabled:opacity-50">
-                        {{ isInstallingModule() === mod.name ? '...' : 'Instalar' }}
+                       <button (click)="installModule(mod)" [disabled]="isInstallingModule() === mod.name" class="bg-white dark:bg-slate-800 rounded-lg shadow-md p-4 flex items-center gap-4 text-left w-full hover:shadow-xl hover:-translate-y-1 transition-all duration-200 disabled:opacity-50 disabled:transform-none">
+                         <img [src]="mod.iconUrl" alt="" class="h-8 w-8">
+                         <span class="font-semibold text-slate-900 dark:text-white flex-1">{{mod.name}}</span>
+                         @if(isInstallingModule() === mod.name) {
+                            <div class="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-blue-500"></div>
+                         }
                       </button>
                     }
-                  </li>
-                }
-              </ul>
-            </div>
-          }
+                  }
+                </div>
+              </section>
+            }
+          </div>
         </div>
       </div>
     </div>
